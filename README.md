@@ -60,12 +60,6 @@ Mintype is built with a very familiar file structure, organization heirarchy and
 
 Yes, Mintype is available on all devices with a browser. We recommend Chrome and Firefox on desktop. On Android I recommend Chrome for its PWA support. On iOS I recommend Safari for its PWA support.
 
-## Are native iOS, Android and Desktop (Electron) apps planned?
-
-An ElectronJS desktop version is planned, it will have the extra benefit of saving notes directly to disk (instead of indexedDB). This allows you to have your own sync mechanisms such as git repositories, one drive, syncthing etc... to sync and backup your notes.
-
-Mobile native apps are currently not planned. This is because the PWAs deliver almost all the features implemented.
-
 ## Is syncing free? Is it secure?
 
 Yes, Mintype uses Google Drive as its sync mechanism free of charge. It runs completely client side (your notes do not go through our servers), and all your notes are encrypted client side prior to reaching any of Google's APIs. You can view you notes on Drive yourself and see that they are stored as ciphertext.
@@ -84,6 +78,12 @@ There is geniune plans to make this project open source soon. All code involved 
 
 I plan to fully open source Mintype at 2000 github stars.
 
+## Are native iOS, Android and Desktop (Electron) apps planned?
+
+An ElectronJS desktop version is planned, it will have the extra benefit of saving notes directly to disk (instead of indexedDB). This allows you to have your own sync mechanisms such as git repositories, one drive, syncthing etc... to sync and backup your notes.
+
+Mobile native apps are currently not planned. This is because the PWAs deliver almost all the features implemented.
+
 ## Are there any paid features?
 
 As of now there is none. I do plan to add a store later on which can contain items like page templates and pre-made elements to improve the note-taking experience. These will be a small price. The community is welcome to submit these templates/designs to us to support development. Other features like AI, OCR etc which require compute will also be paid if ever added. These will not be under a subscription however, but a pay as needed basis. I will not add subscriptions to Mintype.
@@ -95,3 +95,6 @@ Follow for app updates here:
 - [Github](https://github.com/project59/mintype)
 - [Github Issues](https://github.com/project59/mintype/issues)
 - [Roadmap](https://github.com/orgs/project59/projects/1)
+
+
+![footer](https://github.com/project59/mintype/blob/main/public/Mintype.svg)
