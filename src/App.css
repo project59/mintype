@@ -1,0 +1,203 @@
+/* For Chrome, Safari, Edge, and Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+	/* Optional: Removes extra margin that might be present */
+}
+
+/* For Firefox */
+input[type=number] {
+	-moz-appearance: textfield;
+}
+
+.textLabel {
+	@apply font-semibold dark:text-gray-200 text-gray-800 text-sm;
+}
+
+.textRegular {
+	@apply font-normal dark:text-gray-300 text-gray-600 text-sm;
+}
+
+.textTitle {
+	@apply font-semibold dark:text-gray-100 text-gray-900 text-lg;
+}
+
+.switchGroup {
+	@apply relative flex h-6 w-10 cursor-pointer rounded-full bg-indigo-500/10 data-[checked]:bg-indigo-500 p-1 transition-colors duration-200 ease-in-out;
+}
+
+.switchSpan {
+	@apply pointer-events-none inline-block size-4 translate-x-0 rounded-full bg-indigo-300 group-data-[checked]:bg-indigo-100 ring-0 transition duration-200 ease-in-out group-data-[checked]:translate-x-4;
+}
+
+
+/**
+ * GHColors theme by Avi Aryan (http://aviaryan.in)
+ * Inspired by Github syntax coloring
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #393A34;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	font-size: .9em;
+	line-height: 1.2em;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre>code[class*="language-"] {
+	font-size: 1em;
+}
+
+pre[class*="language-"]::-moz-selection,
+pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection,
+code[class*="language-"] ::-moz-selection {
+	background: #b3d4fc;
+}
+
+pre[class*="language-"]::selection,
+pre[class*="language-"] ::selection,
+code[class*="language-"]::selection,
+code[class*="language-"] ::selection {
+	background: #b3d4fc;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border: 1px solid #dddddd;
+	background-color: white;
+}
+
+/* Inline code */
+:not(pre)>code[class*="language-"] {
+	padding: .2em;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	background: #f8f8f8;
+	border: 1px solid #dddddd;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #999988;
+	font-style: italic;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.string,
+.token.attr-value {
+	color: #e3116c;
+}
+
+.token.entity,
+.token.url,
+.token.symbol,
+.token.number,
+.token.boolean,
+.token.variable,
+.token.constant,
+.token.property,
+.token.regex,
+.token.inserted {
+	color: #36acaa;
+}
+
+.token.atrule,
+.token.keyword,
+.token.attr-name,
+.language-autohotkey .token.selector {
+	color: #00a4db;
+}
+
+.token.function,
+.token.deleted,
+.language-autohotkey .token.tag {
+	color: #9a050f;
+}
+
+.token.tag,
+.token.selector,
+.language-autohotkey .token.keyword {
+	color: #28dfff;
+}
+
+.token.important,
+.token.function,
+.token.bold {
+	font-weight: bold;
+}
+
+.token.italic {
+	font-style: italic;
+}
+
+/* table block css */
+.tableHeader {
+	@apply bg-slate-200/20 dark:bg-slate-600/20 text-gray-400 dark:text-gray-300 text-xs;
+}
+
+.tableHeaderTypeIcon {
+	@apply text-xs h-5 w-5 flex justify-center items-center rounded-md cursor-pointer bg-indigo-100 dark:bg-slate-700;
+}
+
+.dropdownPanel {
+	@apply w-48 p-1 shadow rounded-lg text-sm absolute z-50 dark:bg-slate-900 bg-white flex flex-col gap-1;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(0px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-10px);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.2s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-slideIn:nth-child(1) {
+  animation-delay: 200ms;
+}
+
+.animate-slideIn:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.animate-slideIn:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.animate-slideIn:nth-child(4) {
+  animation-delay: 50ms;
+}
+
+.animate-slideIn:nth-child(5) {
+  animation-delay: 0ms;
+}

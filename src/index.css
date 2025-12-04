@@ -1,0 +1,447 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inclusive+Sans:ital,wght@0,300..700;1,300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap'); */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  font-family: Figtree, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+
+}
+
+svg {
+  /* shape-rendering: crispEdges;  */
+  transform: translateZ(0); 
+  /* contain: paint;  */
+}
+
+@media print { 
+    .no-printme  { display: none;}
+    .printme  { display: block;}
+}
+
+/* html {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+} */
+
+.no-scrollbar{
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.diagonalStripeBg{
+  background-color: #ffffff;
+  opacity: 1;
+  background-size: 11px 11px;
+  background-image: repeating-linear-gradient(45deg, #e6e6e6 0, #e6e6e6 1.1px, #ffffff 0, #ffffff 50%);
+}
+
+.rightPane{
+  @apply overflow-x-hidden overflow-y-auto flex-1 flex flex-col bg-slate-100 dark:bg-[#10101e];
+}
+
+.thinBorder{
+ @apply border-gray-200 dark:border-zinc-700
+}
+
+.textH2{
+  @apply text-sm font-semibold text-gray-900 dark:text-gray-100;
+}
+
+.textNode{
+  @apply text-sm text-gray-900 dark:text-gray-100;
+}
+
+.btnPrimary {
+  @apply flex items-center justify-center bg-[#afffc7] dark:bg-[#afffc7] dark:hover:bg-[#99f0b3] hover:bg-[#99f0b3] text-black px-3 h-9 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+}
+
+.btnPrimarySm {
+  @apply flex items-center justify-center bg-[#afffc7] dark:bg-[#afffc7] dark:hover:bg-[#99f0b3] hover:bg-[#99f0b3] text-black px-2 h-6 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+}
+
+.btnCreate {
+  @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full font-semibold border-2 border-dashed duration-200;
+}
+
+.btnSecondary {
+  @apply flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-black px-3 h-9 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+}
+
+.btnSecondarySm {
+  @apply flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-black px-2 h-6 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+}
+
+.btnChip{
+  @apply rounded-full text-xs bg-slate-400/10 hover:bg-slate-400/20 data-[active]:bg-slate-400/20 duration-200 text-gray-800 dark:text-gray-200 flex items-center gap-1 p-1 px-2 hover:shadow-sm;
+}
+
+.btnRound{
+  @apply h-5 w-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-900 text-zinc-700 dark:text-gray-300 rounded-full font-medium text-xs duration-200 flex gap-2 justify-center items-center;
+}
+
+.btnAction{
+  @apply bg-gray-100 text-black dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 dark:text-white border border-gray-300 dark:border-black px-2 py-1 h-7 rounded-xl text-xs duration-200 flex items-center gap-1;
+}
+
+.btnDestructive{
+  @apply bg-rose-800 hover:bg-red-900 text-white px-3 h-9 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+}
+
+.btnDestructiveSm{
+  @apply bg-rose-800 hover:bg-red-900 text-white px-2 h-6 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+}
+
+.smallInput {
+  @apply p-1 text-sm rounded-md h-6 bg-slate-100 dark:bg-[#222036] text-black dark:text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none;
+}
+
+.tableInput{
+  @apply bg-transparent text-sm text-gray-900 dark:text-gray-100 w-full;
+}
+
+.baseInput{
+  @apply p-1 px-3 w-full text-sm rounded-xl h-9 bg-gray-100 dark:bg-[#222036] text-black dark:text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none;
+}
+
+.dropdownItem{
+  @apply px-2 py-1.5 rounded-md text-gray-700 dark:text-slate-300 dark:data-[active]:bg-slate-800 flex items-center gap-2 data-[active]:bg-gray-100 disabled:opacity-40 duration-200;
+}
+
+.dropdownItemSm{
+  @apply px-1.5 py-1 rounded-md text-gray-700 dark:text-slate-300 dark:data-[active]:bg-slate-800 flex items-center gap-2 data-[active]:bg-gray-100 disabled:opacity-40 duration-200;
+}
+
+.dialogBackdrop{
+  @apply fixed inset-0 bg-black/70 duration-300 ease-out transition-all data-[closed]:opacity-0
+}
+
+.dialogWrapper {
+  @apply fixed inset-0 flex w-screen items-center justify-center p-2;
+}
+
+.dialogPanel {
+  @apply w-full max-w-md rounded-xl space-y-3 bg-white dark:bg-[#2e2c46] p-5 duration-300 ease-out data-[closed]:translate-y-5 data-[closed]:opacity-0;
+}
+
+.btnBase{
+  @apply transition-all ease-in-out duration-300 flex items-center justify-center gap-1;
+}
+
+.quillStyles{
+  /* @apply leading-loose; */
+  @apply text-slate-900 dark:text-slate-300/80;
+}
+.quillStyles strong, h1, h2, h3, h4, h5, h6{
+  @apply text-black dark:text-white;
+}
+
+.quillStyles h1{
+  font-size: 1.875rem !important;
+  font-weight: 600 !important;
+  /* line-height: 2.25rem !important; */
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.quillStyles h2{
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  /* line-height: 1.75rem !important; */
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.quillStyles h3{
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  /* line-height: 1.5rem !important; */
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.quillStyles h4{
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  /* line-height: 1.25rem !important; */
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.quillStyles h5{
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  /* line-height: 1rem !important; */
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.quillStyles h6{
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  /* line-height: 0.875rem !important; */
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.ql-code-block-container{
+  @apply !bg-slate-50 !rounded-lg dark:!bg-[#1c2129] !text-black dark:!text-white !p-4;
+}
+
+.quillStyles p{
+  @apply text-base font-normal leading-normal !mb-2;
+}
+
+.quillStyles a{
+  @apply !text-indigo-500 dark:!text-indigo-300 cursor-pointer !no-underline hover:!underline;
+}
+
+[data-page-id]{
+  @apply bg-indigo-300/20;
+}
+
+.quillStyles ul{
+  @apply !text-base !font-normal !list-disc pl-3;
+}
+
+.quillStyles li{
+  @apply leading-7 p-1 pl-3;
+}
+
+.ql-editor ul{
+  @apply !text-zinc-800;
+}
+
+.quillStyles ol{
+  @apply !text-base !font-normal !list-decimal !pl-2 !pb-2;
+}
+
+.quillStyles blockquote{
+  @apply text-base font-normal border-l-4 border-gray-300 pl-4;
+}
+
+.quillStyles pre{
+  @apply text-base font-normal bg-gray-100  p-4 rounded-lg ;
+}
+
+.quillStyles code{
+  @apply !text-sm text-blue-900 dark:text-violet-400 !bg-slate-200 dark:!bg-zinc-600/40 !p-0.5 !px-1 !rounded;
+}
+
+.quillStyles img{
+  @apply w-full h-auto !max-w-48 rounded-md;
+}
+
+.quillStyles strong{
+  @apply font-semibold;
+}
+/* TABLE STYLES */
+
+.quillStyles td{
+  @apply !p-1.5 text-sm !border-gray-400;
+}
+/* target anchor tags inside td */
+.quillStyles td a{
+  @apply !text-indigo-500 !underline;
+}
+
+.ql-indent-1{
+  @apply !pl-10;
+}
+
+.ql-indent-2{
+  @apply !pl-14;
+}
+
+.ql-editor {
+  @apply !m-0 !p-0 focus:outline-none;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.ql-editor::before{
+  text-decoration: none ! important;
+  font: normal normal normal 16px/19px Inter !important;
+  margin-left: -14px;
+  margin-top: 3px;
+  @apply !text-gray-300 dark:!text-gray-600;
+}
+.ql-container {
+  @apply !border-none;
+}
+
+.ql-toolbar{
+  @apply rounded mb-2 !border-none !p-0 absolute -top-8;
+}
+
+.tl-shape-indicator {
+  stroke: #83838364 !important;
+  stroke-dasharray: 2, 4;
+}
+
+.tl-corner-handle {
+  rx: 50%;  /* Apply border-radius on the rect */
+  ry: 50%;  /* This will make it look like a circle */
+}
+
+
+/* Add to your CSS file */
+.quill-comment {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+.quill-comment:hover {
+  @apply bg-blue-200 dark:bg-blue-300/70;
+}
+
+/* target data-comment-type where type is "suggestion" */
+[data-comment-type="suggestion"] {
+  @apply bg-yellow-300/40 cursor-pointer border-y border-dashed border-yellow-400 text-gray-900 dark:text-white;
+}
+
+/* target data-comment-type where type is "question" */
+[data-comment-type="remove"] {
+  @apply bg-red-300/40 line-through cursor-pointer border-y border-dashed border-red-400 text-gray-900 dark:text-white;
+}
+
+/* target data-comment-type where type is "correction" */
+[data-comment-type="correction"] {
+  @apply bg-violet-300/40 cursor-pointer border-y border-dashed border-violet-400 text-gray-900 dark:text-white;
+}
+
+/* target data-comment-type where type is "praise" */
+[data-comment-type="praise"] {
+  @apply bg-green-300/40 cursor-pointer border-y border-dashed border-green-400 text-gray-900 dark:text-white;
+}
+
+
+.ql-picker.ql-font {
+  .ql-picker-item {
+    font-size: 0;
+    &:before {
+      content: attr(data-value) !important;
+      font-size: 14px;
+    }
+  }
+}
+
+.ql-picker.ql-font{
+  .ql-active {
+    &:before {
+      content: attr(data-value) !important;
+      font-size: 14px;
+    }
+  }
+}
+.ql-picker.ql-font .ql-picker-label[data-value="Onest"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="Onest"]::before
+{
+    font-family: "Onest", cursive;;
+    content: "Onest" !important;
+}
+
+.ql-picker.ql-font .ql-picker-label[data-value="Figtree"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="Figtree"]::before
+{
+    font-family: "Figtree", cursive;;
+    content: "Figtree" !important;
+}
+.ql-picker.ql-font .ql-picker-label[data-value="Inter"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="Inter"]::before
+{
+    font-family: "Inter", cursive;;
+    content: "Inter" !important;
+}
+.ql-picker.ql-font .ql-picker-label[data-value="JetBrains"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="JetBrains"]::before
+{
+    font-family: "JetBrains Mono", cursive;;
+    content: "JetBrains Mono" !important;
+}
+.ql-picker.ql-font .ql-picker-label[data-value="Inclusive"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="Inclusive"]::before
+{
+    font-family: "Inclusive Sans", cursive;;
+    content: "Inclusive Sans" !important;
+}
+.ql-picker.ql-font .ql-picker-label[data-value="Bebas"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="Bebas"]::before
+{
+    font-family: "Bebas Neue", cursive;;
+    content: "Bebas Neue" !important;
+}
+.ql-picker.ql-font .ql-picker-label[data-value="Playpen"]::before, 
+.ql-picker.ql-font .ql-picker-item[data-value="Playpen"]::before
+{
+    font-family: "Playpen Sans", cursive;;
+    content: "Playpen Sans" !important;
+}
+
+
+.ql-font-Onest {
+  font-family: "Onest";
+}
+.ql-font-Figtree {
+  font-family: "Figtree";
+}
+.ql-font-Inter {
+  font-family: "Inter";
+}
+.ql-font-JetBrains {
+  font-family: "JetBrains Mono";
+}
+.ql-font-Inclusive {
+  font-family: "Inclusive Sans";
+}
+.ql-font-Bebas {
+  font-family: "Bebas Neue";
+}
+.ql-font-Playpen {
+  font-family: "Playpen Sans";
+}
+
+
+.ql-size-8px { font-size: 8px !important; }
+.ql-size-12px { font-size: 12px !important; }
+.ql-size-14px { font-size: 14px !important; }
+.ql-size-16px { font-size: 16px !important; }
+.ql-size-20px { font-size: 20px !important; }
+.ql-size-24px { font-size: 24px !important; }
+.ql-size-32px { font-size: 32px !important; }
+.ql-size-48px { font-size: 48px !important; }
+.ql-size-64px { font-size: 64px !important; }
+.ql-size-96px { font-size: 96px !important; }
+
+
+/* Base text color for non-tokenized text */
+.code-editor-wrapper textarea,
+.code-editor-wrapper pre {
+  @apply text-[#20252e] dark:text-[#abb2bf];
+  /* cursor white */
+  @apply caret-[#20252e] dark:caret-[#abb2bf];
+}
+
