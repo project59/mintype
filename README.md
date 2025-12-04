@@ -2,7 +2,7 @@
 
 ![intro](images/intro.png)
 
-## Available on all devices - Open Beta out now
+## Available on all devices - Open Beta out now 🍏
 This is a web-based app, so it is available on all devices that have browser support. I recommend Chrome and Firefox for best compatibility.
 
 PWA support is built in to provide a more native feel, especially on **Android** and **iOS** devices. 
