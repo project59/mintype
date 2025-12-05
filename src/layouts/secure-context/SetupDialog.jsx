@@ -46,13 +46,13 @@ export default function SetupDialog({ onSetup }) {
                     <div className="flex items-center gap-3">
                         <img src="/favicon.svg" alt="logo" className="h-7" />
                         <h2 className="text-2xl md:text-3xl font-semibold">
-                            {mode === "import" ? "Import Key" : mode === "new" ? "New Setup" : "Welcome to Mintype!"}
+                            {mode === "import" ? "Import Key" : mode === "new" ? "Set Password" : "Welcome to Mintype!"}
                         </h2>
                     </div>
                     {mode === "select" && (
                         <>
                             <div className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-400/20 w-fit textRegular">
-                                Secure, private and powerful note taking 🌳
+                                Secure, private and powerful note taking
                             </div>
                             {/* <img src="/screenshots/thumbup.png" alt="logo" className="h-20" /> */}
 
@@ -64,7 +64,7 @@ export default function SetupDialog({ onSetup }) {
                                     <div>
                                         <h4 className="font-semibold">New User?</h4>
                                         <p className="textRegular">
-                                            Start using Mintype from scratch.
+                                            Create a new Mintype setup and encryption keys
                                         </p>
                                     </div>
                                     <button className="btnPrimary w-fit" onClick={() => setMode("new")}>
@@ -73,9 +73,9 @@ export default function SetupDialog({ onSetup }) {
                                 </div>
                                 <div className="w-full flex flex-col gap-4 justify-between bg-slate-50 dark:bg-slate-500/20 p-2 rounded-lg">
                                     <div>
-                                        <h4 className="font-semibold">Setting up on a new device?</h4>
+                                        <h4 className="font-semibold">Returning User?</h4>
                                         <p className="textRegular">
-                                            Import your existing keys and notes onto this device.
+                                            Import your existing keys and notes onto this device
                                         </p>
                                     </div>
                                     <button
@@ -108,7 +108,7 @@ export default function SetupDialog({ onSetup }) {
                                     Back
                                 </button>
                                 <button className="btnPrimary w-fit mb-2" onClick={handleOnSetup}>
-                                    Complete Setup
+                                    Confirm
                                 </button>
                             </div>
                         </>

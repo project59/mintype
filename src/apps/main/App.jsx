@@ -24,6 +24,7 @@ import StoreItem from "../../pages/StoreItem.jsx";
 import GetTokens from "../../pages/GetTokens.jsx";
 import AnonRootLayout from "../../layouts/root/AnonRootLayout.jsx";
 import MyProfile from "../../pages/MyProfile.jsx";
+import ComingSoong from "../../pages/ComingSoon.jsx";
 
 const router = createBrowserRouter([
 	{
@@ -145,6 +146,10 @@ const router = createBrowserRouter([
 					}
 				]
 			},
+			{
+				element: <ComingSoong />,
+				path: "coming-soon"
+			}
 		]
 	}
 ]);

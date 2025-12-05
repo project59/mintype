@@ -33,3 +33,8 @@ src/render/shared/*
 src/apps/docs/*
 src/layouts/wiki/*
 package-lock.json
+
+_headers
+schema.sql
+syncing.txt
+src/utils/table-structure

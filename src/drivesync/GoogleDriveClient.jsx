@@ -76,6 +76,11 @@ const GoogleDriveNotesApp = () => {
                 ) : (
                     <div className='mt-4 flex flex-col gap-2'>
                         <StatusChip message={'Not signed in'} type={'warning'} />
+                        <div className="textRegular max-w-md">
+                            Mintype uses web browser storage to save your notes. This means that manual or automatic clearing of browser data will erase your notes! 
+                            <br /><br />
+                            Setup sync to Google Drive to keep them stored remotely and accessible on all your devices.
+                        </div>
                         <button onClick={handleSignIn} className="btnPrimary w-fit">
                             Sign in with Google
                         </button>

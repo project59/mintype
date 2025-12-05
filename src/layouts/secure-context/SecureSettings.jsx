@@ -2,12 +2,14 @@ import { useContext, useState } from "react";
 import { SecureContext } from "./SecureContext";
 import SettingsSkeleton from "../settings/SettingsSkeleton";
 import ResetAppModal from "./ResetAppModal";
+import { Key } from "lucide-react";
 
 export default function SecureSettings() {
     const { handleChangePassword, handleReset, handleExport } =
         useContext(SecureContext);
     const [oldPass, setOldPass] = useState("");
     const [newPass, setNewPass] = useState("");
+    const [usingRec, setUsingRec] = useState(false)
     const [showResetDialog, setShowResetDialog] = useState(false);
 
     return (
@@ -18,15 +20,20 @@ export default function SecureSettings() {
                 </p>
                 <div className="w-full md:max-w-md space-y-2">
                     <h4 className="textTitle">Change Password</h4>
+                    <div className="flex gap-2">
+                        <input
+                            className="baseInput dark:!bg-slate-600/20"
+                            placeholder={usingRec ? 'Recovery Key' : 'Old Password'}
+                            type="password"
+                            value={oldPass}
+                            onChange={(e) => setOldPass(e.target.value)}
+                        />
+                        <button title="Switch Key Type" className="btnPrimary" onClick={() => setUsingRec(!usingRec)}>
+                            <Key size={16} />
+                        </button>
+                    </div>
                     <input
-                        className="baseInput"
-                        placeholder="Old Password"
-                        type="password"
-                        value={oldPass}
-                        onChange={(e) => setOldPass(e.target.value)}
-                    />
-                    <input
-                        className="baseInput"
+                        className="baseInput dark:!bg-slate-600/20"
                         placeholder="New Password"
                         type="password"
                         value={newPass}
@@ -34,7 +41,7 @@ export default function SecureSettings() {
                     />
                     <button
                         className="btnSecondary"
-                        onClick={() => handleChangePassword(oldPass, newPass)}
+                        onClick={() => handleChangePassword(oldPass, newPass, usingRec)}
                     >
                         Change Password
                     </button>

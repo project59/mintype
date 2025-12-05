@@ -137,9 +137,9 @@ export default function SecureProvider({ children }) {
     }
   };
 
-  const handleChangePassword = async (oldPassword, newPassword) => {
-    if (!oldPassword || !newPassword) {
-      toast.error("Both passwords are required");
+  const handleChangePassword = async (oldSecret, newPassword, isRecoveryKey = false) => {
+    if (!oldSecret || !newPassword) {
+      toast.error("Both required values must be provided.");
       return;
     }
 
@@ -148,40 +148,46 @@ export default function SecureProvider({ children }) {
       return;
     }
 
-    if (oldPassword === newPassword) {
-      toast.error("New password must be different from old password");
+    const salt = await getItem(isRecoveryKey ? "recovery_salt" : "salt");
+    const encBlob = await getItem(isRecoveryKey ? "recovery_key_enc" : "master_key_enc");
+
+    if (!encBlob || !salt) {
+      toast.error("Required key data not found for validation.");
       return;
     }
 
-    try {
-      const salt = await getItem("salt");
-      const { iv, ciphertext } = await getItem("master_key_enc");
+    const { iv, ciphertext } = encBlob;
 
-      // Derive KEK from the old password and attempt decryption
-      const oldKEK = await deriveKEK(oldPassword, salt);
+    try {
+      // Derive KEK from the old secret (password or recovery key)
+      const oldKEK = await deriveKEK(oldSecret, salt);
 
       let decrypted;
       try {
         decrypted = await decryptWithKey(oldKEK, iv, ciphertext);
       } catch (err) {
-        toast.error("Incorrect old password. Please try again.");
+        // This is the authentication failure point
+        toast.error(`Incorrect ${isRecoveryKey ? 'Recovery Key' : 'old password'}. Please try again.`);
         return;
       }
 
-      // Re-encrypt master key with the new password
+      // If decryption succeeds, the Master Key (rawMK) is now in memory.
       const rawMK = Uint8Array.from(atob(decrypted), (c) => c.charCodeAt(0));
+
+
+      // always uses a new salt and targets the 'master_key_enc' slot.
       const newSalt = crypto.getRandomValues(new Uint8Array(16));
       const newKEK = await deriveKEK(newPassword, newSalt);
+
       const { iv: newIV, ciphertext: newCiphertext } = await encryptWithKey(
         newKEK,
         btoa(String.fromCharCode(...rawMK))
       );
 
-      // Save new encrypted master key and salt
       await setItem("master_key_enc", { iv: newIV, ciphertext: newCiphertext });
       await setItem("salt", newSalt);
 
-      toast.success("Password changed successfully!");
+      toast.success("Password changed successfully! You are now logged in with your new password.");
     } catch (error) {
       console.error("Error changing password:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -234,7 +240,7 @@ export default function SecureProvider({ children }) {
     setMasterKey(null);
     setReady(false);
     setShowPasswordPrompt(true);
-    
+
   }
 
   const value = {
@@ -253,7 +259,7 @@ export default function SecureProvider({ children }) {
     return <PasswordPrompt onSubmit={handleLogin} />;
 
   if (showRecoveryDialog) {
-    return <RecoveryKeyDialog recoveryKey={recKey} onClose={() => { toast.success("Setup Complete!"); setShowRecoveryDialog(false) }} showDialog={showRecoveryDialog} />;
+    return <RecoveryKeyDialog onHandleExport={handleExport} recoveryKey={recKey} onClose={() => { toast.success("Setup Complete!"); setShowRecoveryDialog(false) }} showDialog={showRecoveryDialog} />;
   }
 
   return <SecureContext.Provider value={value}>

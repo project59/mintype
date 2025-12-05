@@ -97,7 +97,7 @@ export default function MintypeColorPicker({ hideRow1 = false, icon = null, valu
                 {icon}
             </Button>
 
-            <Dialog open={isOpen} className="relative z-20 focus:outline-none" onClose={close}>
+            <Dialog open={isOpen} className="relative z-50 focus:outline-none" onClose={close}>
                 <DialogBackdrop transition className="dialogBackdrop" />
                 <div className="dialogWrapper">
                     <DialogPanel

@@ -31,7 +31,7 @@ export default function ImportPanel() {
                 </p>
             </div>
             <div className="flex gap-2">
-                <NotionImportDialog onImportComplete={handleImportComplete} />
+                {/* <NotionImportDialog onImportComplete={handleImportComplete} /> */}
 
                 <MintypeImportDialog />
             </div>

@@ -5,7 +5,7 @@ import ChipLink from "../components/common/ChipLink.jsx";
 import { useEffect } from "react";
 import { getItem } from "../layouts/secure-context/dbUtils.js";
 import ThemeToggleBtn from "../components/common/ThemeToggleBtn.jsx";
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function DefaultHome() {
     const navigate = useNavigate();
@@ -17,13 +17,15 @@ export default function DefaultHome() {
     }
     // redirect to password entry on startup if an existing key is present
     useEffect(() => {
-        // checkMk();
+        if (!import.meta.env.DEV) {
+            checkMk();
+        }
     }, []);
 
     const slides = [
         {
             title: "Mindmaps",
-            image: "/screenshots/page-mindmap.png",
+            image: "/screenshots/intro.png",
             text: "Organize your notes into mindmaps in the whiteboard.",
         },
         {
@@ -33,7 +35,7 @@ export default function DefaultHome() {
         },
         {
             title: "Annotate and Draw",
-            image: "/screenshots/page-mindmap.png",
+            image: "/screenshots/annotate.png",
             text: "Annotate your notes with drawings, images, text, shapes and more. Complete those maths graphs and physics diagrams without needing another app or paper to draw on. Whiteboard grids are also supported.",
         },
         {
@@ -43,37 +45,37 @@ export default function DefaultHome() {
         },
         {
             title: "Rich Tables",
-            image: "/screenshots/image-table.png",
+            image: "/screenshots/tables.png",
             text: "Yes, our tables have rich text support. You can finally place those images inside your tables.",
         },
         {
             title: "Comments",
-            image: "/screenshots/page-mindmap.png",
+            image: "/screenshots/comments.png",
             text: "A versatile commenting system with four comment types, threads and reactions.",
         },
-        {
-            title: "Quick Share",
-            image: "/screenshots/page-mindmap.png",
-            text: "Quick share pages to others with a shareable link. Pages will automatically deleted after 24 hours.",
-        },
+        // {
+        //     title: "Quick Share",
+        //     image: "/screenshots/page-mindmap.png",
+        //     text: "Quick share pages to others with a shareable link. Pages will automatically deleted after 24 hours.",
+        // },
     ];
 
     return (
         <div className="flex flex-col min-h-screen bg-white dark:bg-[#10101e] text-gray-900">
             <header className="sticky top-0 bg-slate-100/90 dark:bg-[#10101e]/90 z-20 backdrop-blur-sm px-4">
                 <nav className="flex items-center justify-between py-3 max-w-screen-lg mx-auto ">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         <img className="h-5" src="favicon.svg" alt="logo" />
                         <p className="font-semibold text-xl text-black dark:text-white">Mintype</p>
                     </div>
                     <div className="flex gap-1">
-                        <a href="#" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
+                        <a href="https://github.com/project59/mintype" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
                             beta v0.45
                         </a>
-                        <Link className="btnChip gap-1" to="/workspace">
+                        {/* <Link className="btnChip gap-1" to="#">
                             Install PWA
                             <ArrowDown size={12} />
-                        </Link>
+                        </Link> */}
                         <ThemeToggleBtn />
                     </div>
                 </nav>
@@ -135,7 +137,7 @@ export default function DefaultHome() {
                     <p className="max-w-2xl mx-auto textRegular !text-base mb-4">
                         Your notes are stored locally on your computer. They are encrypted on your device and when synced to your Google Drive. No one can read them without your password, not even us.
                     </p>
-                    <ChipLink to={"https://docs.mintype.app/security"} label={'More on security'} />
+                    <ChipLink to={"/coming-soon"} label={'More on security'} />
                 </div>
                 <div className="md:w-1/2 min-h-60 flex items-center justify-center dark:bg-[#1f1f2d] rounded-lg">
                     <img className="h-14" src="svgs/lock.svg" alt="lock" />
@@ -148,7 +150,7 @@ export default function DefaultHome() {
                     <p className="max-w-2xl mx-auto textRegular !text-base mb-4">
                         Our app is built for the web, so it works on all devices with a browser. Install the PWA for a more native experience. An electron desktop app is also coming soon.
                     </p>
-                    <ChipLink to={"https://docs.mintype.app/security"} label={'Install PWA'} />
+                    <ChipLink to={"/coming-soon"} label={'Install PWA'} />
                 </div>
                 <div className="md:w-1/2 min-h-60 flex items-center justify-center dark:bg-[#1f1f2d] rounded-lg">
                     <img className="h-28" src="screenshots/devices.png" alt="lock" />
@@ -169,8 +171,8 @@ export default function DefaultHome() {
             <section className="py-6 md:py-20 mb-2 rounded-2xl max-w-screen-lg mx-auto w-full px-4">
                 <div className="text-4xl md:text-6xl font-semibold mb-6 text-center flex justify-center">
                     <div className="w-fit relative dark:text-white">
-                    ...and it's free.
-                    <img src="/screenshots/thumbup.png" alt="thumbs-up" className="absolute h-20 -right-12 md:-right-10 -top-2 md:top-0" />
+                        ...and it's free.
+                        <img src="/screenshots/thumbup.png" alt="thumbs-up" className="absolute h-20 -right-12 md:-right-10 -top-2 md:top-0" />
                     </div>
                 </div>
                 <p className="textRegular !text-base text-center">
@@ -188,13 +190,13 @@ export default function DefaultHome() {
                         </p>
                         <div className="flex gap-2">
                             <a
-                                href="/app"
+                                href="https://github.com/project59/mintype"
                                 className="btnPrimary flex items-center w-fit"
                             >
                                 Star on GitHub
                             </a>
                             <a
-                                href="/app"
+                                href="https://github.com/orgs/project59/projects/1"
                                 className="btnPrimary flex items-center w-fit"
                             >
                                 Roadmap
@@ -206,7 +208,7 @@ export default function DefaultHome() {
                         Sponsor
                     </a> */}
                             <a
-                                href="/app"
+                                href="/coming-soon"
                                 className="btnPrimary flex items-center w-fit"
                             >
                                 Docs
@@ -215,31 +217,31 @@ export default function DefaultHome() {
                     </div>
                     <div className="md:w-1/4 flex flex-col text-left space-y-2">
                         <h3 className="font-semibold pb-2">Resources</h3>
-                        <a href="https://github.com/your-repo" className="hover:text-gray-800 transition">
+                        <a href="https://github.com/project59/mintype" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             GitHub
                         </a>
-                        <a href="/docs" className="hover:text-gray-800 transition">
+                        <a href="/coming-soon" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Store
                         </a>
-                        <a href="/privacy" className="hover:text-gray-800 transition">
+                        <a href="/coming-soon" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Privacy
                         </a>
-                        <a href="/docs" className="hover:text-gray-800 transition">
+                        <a href="/coming-soon" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Support Mintype
                         </a>
                     </div>
                     <div className="md:w-1/4 flex flex-col text-left space-y-2">
                         <h3 className="font-semibold pb-2">Updates</h3>
-                        <a href="https://github.com/your-repo" className="hover:text-gray-800 transition">
+                        <a href="https://github.com/orgs/project59/projects/1" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Roadmap
                         </a>
-                        <a href="/docs" className="hover:text-gray-800 transition">
+                        <a href="/coming-soon" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Docs
                         </a>
-                        <a href="/privacy" className="hover:text-gray-800 transition">
+                        <a href="/coming-soon" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Changelog
                         </a>
-                        <a href="/privacy" className="hover:text-gray-800 transition">
+                        <a href="/coming-soon" className="hover:text-gray-800  dark:hover:text-gray-200 transition">
                             Dev Blog
                         </a>
                     </div>
