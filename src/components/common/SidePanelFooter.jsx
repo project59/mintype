@@ -44,7 +44,7 @@ export default function SidePanelFooter() {
                     >
                         Give Feedback
                     </button>
-                    <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.45</a>
+                    <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.46</a>
                 </div>
 
                 <div className="flex gap-1">

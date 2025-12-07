@@ -1,22 +1,22 @@
 import { extractImageBlocks } from "./imageExtractor";
-import { generateId } from "../NotionImporter";
 import DOMPurify from 'dompurify';
 import { extractCalloutBlock } from "./calloutExtractor";
 import { extractCodeBlock } from "./codeExtractor";
 import { transformNotionPageLinks } from "./tranformNotionLink";
+import { nanoid } from "nanoid";
 
 export async function parseHtmlToBlocks(htmlContent, zipFile, useCustomBlocks = false, htmlFilePath = '', rootId) {
     if (!useCustomBlocks) {
         // Original behavior - just wrap everything in a text block
         return [{
-            id: generateId(),
+            id: nanoid(),
             type: "dynamic",
             x: 5000,
             y: 5000,
-            width: 800,
+            width: 600,
             zIndex: 0,
             content: [{
-                id: generateId(),
+                id: nanoid(),
                 type: 'text',
                 data: { text: htmlContent }
             }],
@@ -37,11 +37,11 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
 
-    //html content has a header, and a div. we want to pull the header as the first segment
+    // Extract header
     const header = doc.querySelector('h1');
     if (header) {
         segments.push({
-            id: generateId(),
+            id: nanoid(),
             type: 'text',
             data: { text: cleanHtml(header.outerHTML) }
         });
@@ -51,25 +51,35 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
     const bodyContent = bodyMatch ? bodyMatch[1].trim() : htmlContent.trim();
     const divParse = parser.parseFromString(bodyContent, 'text/html');
 
-    // console.log(bodyContent)
-
-    // Get all child nodes from the bodyContent
     const bodyNodes = Array.from(divParse.body.childNodes);
-
     let currentTextContent = '';
-    // console.log(bodyNodes)
-    for (const node of bodyNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'FIGURE') {
-            // Check if it's a callout block first
-            if (node.classList.contains('callout')) {
-                console.log("found callout");
 
+    for (const node of bodyNodes) {
+        // Helper function to get the actual content node (unwrap display:contents divs), fk off notion they keep changing their export format
+        const getContentNode = (node) => {
+            if (node.nodeType === Node.ELEMENT_NODE &&
+                node.tagName === 'DIV' &&
+                node.style.display === 'contents') {
+                // Return the first child element if it exists
+                const childElement = Array.from(node.childNodes).find(
+                    child => child.nodeType === Node.ELEMENT_NODE
+                );
+                return childElement || node;
+            }
+            return node;
+        };
+
+        const contentNode = getContentNode(node);
+
+        if (contentNode.nodeType === Node.ELEMENT_NODE && contentNode.tagName === 'FIGURE') {
+            // Check if it's a callout block first
+            if (contentNode.classList.contains('callout')) {
+                console.log("found callout");
                 // Save any accumulated text content before the callout
                 if (currentTextContent.trim()) {
-                    // Transform page links before saving
                     const transformedContent = transformNotionPageLinks(currentTextContent.trim(), rootId);
                     segments.push({
-                        id: generateId(),
+                        id: nanoid(),
                         type: 'text',
                         data: { text: transformedContent }
                     });
@@ -77,19 +87,20 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
                 }
 
                 // Extract callout block
-                const calloutBlock = extractCalloutBlock(node);
+                const calloutBlock = extractCalloutBlock(contentNode);
                 if (calloutBlock) {
                     segments.push(calloutBlock);
                 }
             } else {
                 // Check for image blocks
-                const imgElement = node.querySelector('img');
+                const imgElement = contentNode.querySelector('img');
+                console.log('image found');
                 if (imgElement) {
                     // Save any accumulated text content before the image
                     if (currentTextContent.trim()) {
                         const transformedContent = transformNotionPageLinks(currentTextContent.trim(), rootId);
                         segments.push({
-                            id: generateId(),
+                            id: nanoid(),
                             type: 'text',
                             data: { text: transformedContent }
                         });
@@ -97,7 +108,7 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
                     }
 
                     // Extract image block
-                    const imageBlock = await extractImageBlocks(node, zipFile, htmlFilePath);
+                    const imageBlock = await extractImageBlocks(contentNode, zipFile, htmlFilePath);
                     if (imageBlock) {
                         segments.push(imageBlock);
                     }
@@ -113,7 +124,7 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
             if (currentTextContent.trim()) {
                 const transformedContent = transformNotionPageLinks(currentTextContent.trim(), rootId);
                 segments.push({
-                    id: generateId(),
+                    id: nanoid(),
                     type: 'text',
                     data: { text: transformedContent }
                 });
@@ -140,7 +151,7 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
     if (currentTextContent.trim()) {
         const transformedContent = transformNotionPageLinks(currentTextContent.trim(), rootId);
         segments.push({
-            id: generateId(),
+            id: nanoid(),
             type: 'text',
             data: { text: transformedContent }
         });
@@ -154,7 +165,7 @@ async function parseHtmlSegments(htmlContent, zipFile, htmlFilePath, rootId) {
     })
 
     return segments.length > 0 ? segments : [{
-        id: generateId(),
+        id: nanoid(),
         type: 'text',
         data: { text: htmlContent }
     }];

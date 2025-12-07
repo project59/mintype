@@ -1,26 +1,13 @@
 import MintypeImportDialog from "../../components/importing/MintypeImportDialog.jsx";
 import NotionImportDialog from "../../components/importing/NotionImportDialog.jsx";
 import SettingsSkeleton from "./SettingsSkeleton.jsx";
-import dbService from "../../lib/dbService.js";
-import { useContext } from "react";
-import { SecureContext } from "../secure-context/SecureContext.jsx";
 
 export default function ImportPanel() {
-    const {masterKey} = useContext(SecureContext)
-    const existingRootIds = [];
-    const getAllEntries = async () => {
-        const allRoots = await dbService.getAllRootEntries(masterKey);
-        for (const root of allRoots) {
-            existingRootIds.push(root.id);
-        }
-        console.log("existingRootIds", existingRootIds);
-    }
 
     const handleImportComplete = (results) => {
         console.log('Import completed:', results);
     };
 
-    getAllEntries();
 
     return (
         <SettingsSkeleton title="Import Notes">
@@ -31,7 +18,7 @@ export default function ImportPanel() {
                 </p>
             </div>
             <div className="flex gap-2">
-                {/* <NotionImportDialog onImportComplete={handleImportComplete} /> */}
+                <NotionImportDialog onImportComplete={handleImportComplete} />
 
                 <MintypeImportDialog />
             </div>

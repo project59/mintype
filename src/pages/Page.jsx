@@ -55,12 +55,12 @@ export default function Page() {
         }, 500);
     }, []);
 
-    const fetchPage = async () => {
+    const fetchPage = async (isRefresh = false) => {
         try {
             const fetchedMeta = await dbService.getMeta(pageId);
             const fetchedContent = await dbService.getContent(pageId, masterKey);
             setPageMeta(fetchedMeta);
-            if (fetchedMeta.sensitive) {
+            if (fetchedMeta.sensitive && !isRefresh) {
                 setShowPassword(true);
             }
             setPageContent(fetchedContent);
@@ -79,6 +79,10 @@ export default function Page() {
         } catch (error) {
             console.error(error);
         }
+    };
+
+    const triggerRefresh = () => {
+        fetchPage(true);
     };
 
     const handleUndo = useCallback(async () => {
@@ -312,7 +316,7 @@ export default function Page() {
     return (
         <div className="flex flex-col items-center relative h-full text-black overflow-hidden">
             <div className="sticky top-0 h-12 z-20 bg-slate-100 dark:bg-[#10101e] w-full">
-                <FunctionBar handleUndo={handleUndo} handleRedo={handleRedo} setFavorite={setFavorite} updatePreferences={updatePreferences} />
+                <FunctionBar handleUndo={handleUndo} handleRedo={handleRedo} setFavorite={setFavorite} updatePreferences={updatePreferences} triggerRefresh={triggerRefresh} />
             </div>
 
             {pageMeta && pageMeta.id === pageId && (
@@ -321,6 +325,7 @@ export default function Page() {
                         key={pageId}
                         element={elements[0]}
                         onElementUpdate={handleElementUpdate}
+                        width={pageMeta.documentWidth}
                     />
                 ) : (
                     <Whiteboard

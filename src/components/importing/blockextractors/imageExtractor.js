@@ -1,4 +1,4 @@
-import { generateId } from '../NotionImporter';
+import { nanoid } from 'nanoid';
 
 export async function extractImageBlocks(figureElement, zipFile, htmlFilePath) {
     const imgElement = figureElement.querySelector('img');
@@ -6,14 +6,18 @@ export async function extractImageBlocks(figureElement, zipFile, htmlFilePath) {
 
     const src = imgElement.getAttribute('src');
     // Properly decode the entire URL
-    const decodedSrc = decodeURIComponent(src);
+    const decodedSrc = decodeURIComponent(src); // something like PageName/image.png
     
-
     // the image file name is after the / of the src
     const imageName = decodedSrc.split('/').pop();
+    
+    console.log(htmlFilePath)
 
-    //replace the '.html' at the end of htmlFilePath with the image name
-    const finalPath = htmlFilePath.replace('.html', '/' + imageName);
+    //the end of the file path is composed of the page name, a space, then the page ID, then '.html', get rid of the space, ID and html, and append image name to it
+    const finalPart = htmlFilePath.split('/').pop().replace('.html', '').replace(/\s+[a-f0-9]{32}$/, '');
+    const everyThingBeforeFinalPart = htmlFilePath.split('/').slice(0, -1).join('/');
+    const finalPath = everyThingBeforeFinalPart + '/' + finalPart + '/' + imageName;
+
     const width = extractWidth(imgElement);
 
     if (!src) return null;
@@ -22,13 +26,13 @@ export async function extractImageBlocks(figureElement, zipFile, htmlFilePath) {
         const imageData = await extractImageFromZip(finalPath, zipFile);
 
         return {
-            id: generateId(),
+            id: nanoid(),
             type: 'image',
             data: {
                 imageSource: imageData.base64,
                 sourceType: 'file',
                 fileName: imageData.fileName,
-                width: width,
+                width: width || 720,
                 justify: 'center'
             }
         };
@@ -36,7 +40,7 @@ export async function extractImageBlocks(figureElement, zipFile, htmlFilePath) {
         console.warn(`Failed to extract image: ${finalPath}`, htmlFilePath, error);
         // Fallback - return as text block
         return {
-            id: generateId(),
+            id: nanoid(),
             type: 'text',
             data: { text: figureElement.outerHTML }
         };
@@ -69,7 +73,7 @@ async function extractImageFromZip(imagePath, zipFile) {
 
     // Decode the URL-encoded path
     const decodedPath = decodeURIComponent(imagePath);
-
+    console.log(decodedPath)
     // Try to find the image file in the zip
     const imageFile = zip.file(decodedPath);
 

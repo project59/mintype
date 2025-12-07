@@ -68,6 +68,7 @@ const ZipImportComponent = ({ onClose }) => {
                     <p className='textRegular'>
                         Please select if your notes are encrypted or not to proceed with the import.
                     </p>
+                    <p className='textRegular'>The JSON importer is still a work in progress!</p>
                     {/* radio options for encrypted or not encrypted */}
                     <div className="space-y-2">
                         <div>

@@ -27,7 +27,7 @@ export default function NotionImportDialog({ onImportComplete }) {
                 <div className="dialogWrapper">
                     <DialogPanel
                         transition
-                        className="dialogPanel"
+                        className="dialogPanel !max-w-lg"
                     >
                         <NotionImportManager onImportComplete={onImportComplete} />
                     </DialogPanel>

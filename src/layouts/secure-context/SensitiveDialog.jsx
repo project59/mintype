@@ -44,6 +44,9 @@ export default function SensitiveDialog({ onSubmit }) {
                         <h2 className="textTitle">
                             {"Enter Password"}
                         </h2>
+                        <p className="textRegular">
+                            This page has been protected with a password.
+                        </p>
                         <Input
                             type="password"
                             className="baseInput"
@@ -52,17 +55,21 @@ export default function SensitiveDialog({ onSubmit }) {
                             onKeyDown={handleKeyDown}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder={"Password"}
-                            autocomplete="off"
+                            autoComplete="off"
                         />
+                        <div className="flex justify-between">
+                            <button className="btnSecondary" onClick={() => close()}>
+                                Close
+                            </button>
                         <button
-                            className="btnPrimary w-full mb-2"
+                            className="btnPrimary w-fit"
                             onClick={() => onSubmit(password, false)}
-                        >
+                            >
                             Unlock
                         </button>
+                            </div>
                     </DialogPanel>
                 </div>
-
             </Dialog>
         </>
     );

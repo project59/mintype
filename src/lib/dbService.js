@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 import { nanoid } from 'nanoid';
 import { addOperation } from './syncService';
-import { newPageContentSchema } from '../utils/constants.js';
+import { newPageContentSchema, newPageSchema } from '../utils/constants.js';
 import { getWorkspaceRandomImage } from "../utils/assets.js";
 import { decryptDataWithMasterKey, encryptDataWithMasterKey } from '../layouts/secure-context/secureUtils.js';
 
@@ -277,6 +277,34 @@ async function addEntry({ id, newContent, parentId, rootId, addToQueue = true, p
     if (addToQueue) {
         await addOperation(newId, 'create'); // Add to sync queue
     }
+    notifyUpdate();
+    return newId;
+}
+
+async function addNotionEntry({ id, name, emoji, pageContent, parentId, rootId, masterKey }) {
+    await initializeDB();
+
+    // if id is not null use it, otherwise generate a new one
+    const newId = id || nanoid();
+    const newEntry = {
+        id: newId,
+        rootId,
+        parentId,
+        emoji,
+        ...newPageSchema('document', null, name), // Spread newContent to include dynamic properties
+    };
+    await db.put(STORE_NAME, newEntry);
+
+
+    const encrypted = await encryptDataWithMasterKey(masterKey, JSON.stringify({
+        ...pageContent,
+    }));
+    await db.put('pagedata', {
+        id: newId,
+        ...encrypted
+    });
+
+    await addOperation(newId, 'create'); // Add to sync queue
     notifyUpdate();
     return newId;
 }
@@ -1032,7 +1060,8 @@ const dbService = {
     getDeletedFiles,
     restoreTrashedFile,
     notifyUpdate,
-    addDummyPage
+    addDummyPage,
+    addNotionEntry
 };
 
 export default dbService;

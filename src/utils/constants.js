@@ -15,8 +15,8 @@ export const REACTION_TYPES = {
   THANKS: { emoji: '🙏', label: 'thanks' }
 };
 
-export const newPageSchema = (type, order) => ({
-  name: "Untitled Page",
+export const newPageSchema = (type, order, name) => ({
+  name: name || "Untitled Page",
   type: type || 'document',
   emoji: null,
   created: Date.now(),
@@ -28,6 +28,7 @@ export const newPageSchema = (type, order) => ({
   sensitive: false,
   remoteFileId: null,
   wikiId: null,
+  documentWidth: 'normal' // normal, wide
 });
 
 export const newPageContentSchema = (type) => ({
@@ -56,7 +57,6 @@ export const newPageContentSchema = (type) => ({
     gridType: "none", // none, dots, lines
     gridSize: 20,
     gridColor: { r: 0, g: 0, b: 0 },
-    isFavorite: false,
   }
 })
 

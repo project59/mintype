@@ -1,34 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import FileUploader from './FileUploader';
 import ImportPreview from './ImportPreview';
 import { analyzeZipStructure, importSelectedPages } from './NotionImporter';
 import dbService from '../../lib/dbService';
+import { SecureContext } from '../../layouts/secure-context/SecureContext';
+import { nanoid } from 'nanoid';
 
 const NotionImportManager = ({ onImportComplete }) => {
     const [importState, setImportState] = useState('idle'); // idle, analyzing, previewing, importing
     const [fileStructure, setFileStructure] = useState(null);
     const [importResults, setImportResults] = useState(null);
     const [error, setError] = useState(null);
-    const [roots, setRoots] = useState([]);
-    const [importId, setImportId] = useState(null);
-
-
-    const getRootIds = async () => {
-        const roots = await dbService.getAllRootEntries();
-        setRoots(roots);
-    }
-
-    useEffect(() => {
-        getRootIds();
-    }, [])
+    const { masterKey } = useContext(SecureContext);
 
     const handleFileUpload = async (file) => {
         try {
             setImportState('analyzing');
             setError(null);
 
-            const structure = await analyzeZipStructure(file, true, importId);
+            // first we create a new workspace for this import
+            const newId = nanoid()
+            await dbService.addRootEntry(
+                {
+                    id: newId,
+                    newContent: {
+                        name: 'New Notion Import',
+                    },
+                    password: masterKey,
+                }
+            )
 
+            const structure = await analyzeZipStructure(file, true, newId);
+            console.log(structure)
             setFileStructure(structure);
             setImportState('previewing');
         } catch (err) {
@@ -41,7 +44,7 @@ const NotionImportManager = ({ onImportComplete }) => {
         try {
             setImportState('importing');
 
-            const results = await importSelectedPages(fileStructure, selectedPages);
+            const results = await importSelectedPages(fileStructure, selectedPages, masterKey);
 
             setImportResults(results);
             setImportState('idle');
@@ -63,21 +66,10 @@ const NotionImportManager = ({ onImportComplete }) => {
     };
 
     return (
-        <div className="space-y-4">
-
-
-            {/* show all the worskpaces as buttons, clicking them sets the import workspaceId */}
-            <div className=''>
-                <h2 className='text-lg font-medium'>Select Workspace</h2>
-                <p className='text-sm text-gray-500'>Click on the workspace you want to import into</p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                    {roots.map((workspace) => (
-                        <button className={`btnRound ${workspace.id === importId ? '!bg-blue-500 !text-white !font-semibold' : ''}`} key={workspace.id} onClick={() => setImportId(workspace.id)}>
-                            {workspace.name}
-                        </button>
-                    ))}
-                </div>
-            </div>
+        <div className="space-y-2">
+            <h2 className='textTitle'>Upload Zip</h2>
+            <p className='textRegular'>A new workspace will be created for this import. You can move your files out from there later if you wish.</p>
+            <p className='textRegular'>The notion importer is still a work in progress!</p>
 
             {error && (
                 <div className="error-message">
@@ -86,9 +78,7 @@ const NotionImportManager = ({ onImportComplete }) => {
                 </div>
             )}
 
-            {importState === 'idle' && importId && (
-                <FileUploader onFileUpload={handleFileUpload} />
-            )}
+            <FileUploader onFileUpload={handleFileUpload} />
 
             {importState === 'analyzing' && (
                 <div className="analyzing-state">
@@ -102,7 +92,6 @@ const NotionImportManager = ({ onImportComplete }) => {
                     fileStructure={fileStructure}
                     onImport={handleImportConfirm}
                     onCancel={handleReset}
-                    importId={importId}
                 />
             )}
 
@@ -116,7 +105,7 @@ const NotionImportManager = ({ onImportComplete }) => {
             {importResults && (
                 <div className="space-y-2 text-sm text-gray-500">
                     <h3>Import Complete!</h3>
-                    <p>Successfully imported {importResults.successCount} pages</p>
+                    <p className='textRegular'>Successfully imported {importResults.successCount} pages</p>
                     {importResults.errors.length > 0 && (
                         <div className="import-errors">
                             <p>Errors encountered:</p>

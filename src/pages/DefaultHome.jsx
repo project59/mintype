@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { getItem } from "../layouts/secure-context/dbUtils.js";
 import ThemeToggleBtn from "../components/common/ThemeToggleBtn.jsx";
 import { ArrowRight } from "lucide-react";
+import ThemedSvg from "../components/common/ThemedSvg.jsx";
 
 export default function DefaultHome() {
     const navigate = useNavigate();
@@ -70,7 +71,7 @@ export default function DefaultHome() {
                     </div>
                     <div className="flex gap-1">
                         <a href="https://github.com/project59/mintype" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
-                            beta v0.45
+                            beta v0.46
                         </a>
                         {/* <Link className="btnChip gap-1" to="#">
                             Install PWA
@@ -117,15 +118,14 @@ export default function DefaultHome() {
                     </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2 py-12">
-                    <FeatCard img="svgs/lock.svg" title="Offline Support" description="Mintype is fully functional without internet. All data is stored locally and synced when online again" />
-
-                    <FeatCard img="svgs/lock.svg" title="Secure Storage" description="Extra security never hurts. Note content is encrypted locally and in Google Drive with your password" />
-                    <FeatCard img="svgs/lock.svg" title="No Limits" description="No limits to the number of workspaces or pages. Store as much as your device can handle" />
-                    <FeatCard img="svgs/drive-sync.svg" title="Free Cloud Sync" description="Sync your notes to Google Drive free of charge. Easy setup and multi-device support is built in" />
-                    <FeatCard img="svgs/drive-sync.svg" title="Beautiful Documents" description="Create rich documents with familiar block style editing and text formatting" />
-                    <FeatCard img="svgs/drive-sync.svg" title="Rich Whiteboards" description="All blocks are supported in whiteboards, plus drawing, shapes and backgrounds" />
-                    <FeatCard img="svgs/drive-sync.svg" title="Work Fast" description="Skip app start and network load times, Mintype stores everything on your device for fast access" />
-                    <FeatCard img="svgs/drive-sync.svg" title="Community Features" description="Community features to help you get the most out of your notes are coming soon!" />
+                    <FeatCard img="offline" title="Offline Support" description="Mintype is fully functional without internet. All notes are stored locally" />
+                    <FeatCard img="secure" title="Secure Storage" description="Extra security never hurts. Notes is encrypted locally and in Google Drive with your password" />
+                    <FeatCard img="storage" title="No Limits" description="No limits to the number of workspaces or pages. Store as much as your device can handle" />
+                    <FeatCard img="drive-sync" title="Free Cloud Sync" description="Sync your notes to Google Drive free of charge. Easy setup and multi-device support is built in" />
+                    <FeatCard img="rich-text" title="Beautiful Documents" description="Create rich documents with familiar block style editing and text formatting" />
+                    <FeatCard img="rich-whiteboard" title="Rich Whiteboards" description="All blocks are supported in whiteboards, plus drawing, shapes and backgrounds" />
+                    <FeatCard img="work-fast" title="Work Fast" description="Skip app start and network load times, Mintype stores everything on your device for fast access" />
+                    <FeatCard img="community" title="Community Features" description="Features to help you get the most out of your notes are coming soon!" />
                 </div>
 
             </section>
@@ -139,8 +139,10 @@ export default function DefaultHome() {
                     </p>
                     <ChipLink to={"/coming-soon"} label={'More on security'} />
                 </div>
-                <div className="md:w-1/2 min-h-60 flex items-center justify-center dark:bg-[#1f1f2d] rounded-lg">
-                    <img className="h-14" src="svgs/lock.svg" alt="lock" />
+                <div className="md:w-1/2 min-h-60 flex items-center justify-center bg-slate-50 dark:bg-[#1f1f2d] rounded-lg">
+                    <div className="max-w-32">
+                        <ThemedSvg url={'secure'} />
+                    </div>
                 </div>
             </section>
 
@@ -152,8 +154,10 @@ export default function DefaultHome() {
                     </p>
                     <ChipLink to={"/coming-soon"} label={'Install PWA'} />
                 </div>
-                <div className="md:w-1/2 min-h-60 flex items-center justify-center dark:bg-[#1f1f2d] rounded-lg">
-                    <img className="h-28" src="screenshots/devices.png" alt="lock" />
+                <div className="md:w-1/2 min-h-60 flex items-center justify-center bg-slate-50 dark:bg-[#1f1f2d] rounded-lg">
+                    <div className="h-20">
+                        <ThemedSvg url={'devices'} />
+                    </div>
                 </div>
             </section>
 
@@ -172,7 +176,9 @@ export default function DefaultHome() {
                 <div className="text-4xl md:text-6xl font-semibold mb-6 text-center flex justify-center">
                     <div className="w-fit relative dark:text-white">
                         ...and it's free.
-                        <img src="/screenshots/thumbup.png" alt="thumbs-up" className="absolute h-20 -right-12 md:-right-10 -top-2 md:top-0" />
+                        <div className="absolute h-20 md:h-24 -right-12 md:-right-14 -top-2 md:-top-1">
+                            <ThemedSvg url={'thumbs-up'} />
+                        </div>
                     </div>
                 </div>
                 <p className="textRegular !text-base text-center">

@@ -8,7 +8,7 @@ import PomodoroTimer from "../pomodoro/PomodoroTimer";
 import { useSidebar } from "../../layouts/root/SidebarContext.jsx";
 import DriveSyncPopup from "../../drivesync/DriveSyncPopup.jsx";
 
-export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePreferences }) {
+export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePreferences, triggerRefresh }) {
     const [breadcrumbs, setBreadcrumbs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(null);
@@ -55,6 +55,15 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
 
         } catch (error) {
             console.error('Failed to set sensitive:', error);
+        }
+    };
+
+    const setWidth = async (width) => {
+        try {
+            await dbService.updateMetaField({ id: pageId, fieldName: 'documentWidth', newValue: width });
+            triggerRefresh();
+        } catch (error) {
+            console.error('Failed to set width:', error);
         }
     };
 
@@ -182,10 +191,9 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                         <button className="text-slate-600 dark:text-slate-200 hover:rounded-[50px] btnBase w-7 h-7 bg-slate-400/20 rounded-r-lg rounded-l" onClick={handleRedo} title="Redo">
                             <Redo size={12} />
                         </button>
-                        <PageOptionsPopup page={page} setFavorite={setFavorite} setSensitive={setSensitive} updatePreferences={updatePreferences} />
+                        <PageOptionsPopup page={page} setFavorite={setFavorite} setSensitive={setSensitive} setWidth={setWidth} updatePreferences={updatePreferences} />
                     </div>
                     <div className="flex items-center gap-1">
-
                         <SearchBar />
                         <DriveSyncPopup />
                     </div>

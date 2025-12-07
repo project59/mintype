@@ -187,7 +187,7 @@ export default function SecureProvider({ children }) {
       await setItem("master_key_enc", { iv: newIV, ciphertext: newCiphertext });
       await setItem("salt", newSalt);
 
-      toast.success("Password changed successfully! You are now logged in with your new password.");
+      toast.success("Password changed successfully!");
     } catch (error) {
       console.error("Error changing password:", error);
       toast.error("An unexpected error occurred. Please try again.");

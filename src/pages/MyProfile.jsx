@@ -4,6 +4,8 @@ import PageHeaderWrapper from '../components/skeletons/PageHeaderWrapper';
 import PageSectionWrapper from '../components/skeletons/PageSectionWrapper';
 import { Edit } from 'lucide-react';
 import BadgeList from '../components/badges/BadgeList';
+import AvatarPicker from '../layouts/profile/AvatarPicker';
+import DisplayNameDialog from '../layouts/profile/DisplayNameDialog';
 
 export default function MyProfile() {
     const [profileData, setProfileData] = useState(null);
@@ -11,6 +13,8 @@ export default function MyProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showSupportId, setShowSupportId] = useState(false);
+    const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+    const [showDisplayName, setDisplayName] = useState(false);
     const { supabase, user } = useSupabaseAuth();
 
     useEffect(() => {
@@ -20,7 +24,7 @@ export default function MyProfile() {
                 setError(null);
 
                 if (!user) {
-                    setError('User not logged in.');
+                    setError('User not logged in');
                     setLoading(false);
                     return;
                 }
@@ -57,9 +61,29 @@ export default function MyProfile() {
         fetchUserData();
     }, []);
 
+    //function to refresh public profile ONLY after an avatar or name update
+    const refreshPublicProfile = async () => {
+        try {
+            const { data: profile, error: profileError } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError) throw profileError;
+
+            setProfileData(profile);
+        } catch (err) {
+            console.error('Fetch error:', err.message);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const renderElement = () => {
         if (loading) return <div>Loading profile...</div>;
-        if (error) return <div>Error: {error}</div>;
+        if (error) return <div className='infoBox w-fit'>{error}</div>;
         if (!profileData || !privateData) return <div>No profile data found.</div>;
 
         return (
@@ -76,14 +100,14 @@ export default function MyProfile() {
                                     src={profileData.avatar_url || 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y2F0fGVufDB8fDB8fHww'}
                                     alt="Profile"
                                 />
-                                <button className='btnChip absolute -bottom-1 -right-1'>
+                                <button onClick={() => setShowAvatarPicker(true)} className='btnChip absolute -bottom-1 -right-1'>
                                     <Edit size={14} />
                                 </button>
                             </div>
 
                             <div className='space-y-1'>
                                 <p className='textLabel'>Display Name</p>
-                                <div className='flex gap-2 items-center'>
+                                <div onClick={() => setDisplayName(true)} className='flex gap-2 items-center'>
                                     <p className='textRegular'>{profileData.display_name}</p>
                                     <button className='btnChip'><Edit size={14} /></button>
                                 </div>
@@ -121,7 +145,7 @@ export default function MyProfile() {
                                         <div className='textRegular'>
                                             {privateData.support_id}
                                         </div>
-                                        <div className='p-2 rounded-md text-sm max-w-md bg-indigo-400/20 text-indigo-500 dark:text-indigo-300'>
+                                        <div className='infoBox max-w-md'>
                                             The support ID is used to contact support if you want to submit content to the store, have any questions or report an issue.
                                         </div>
                                     </div>
@@ -177,6 +201,9 @@ export default function MyProfile() {
                         Under Contruction
                     </div>
                 </div>
+
+                <AvatarPicker isDialogOpen={showAvatarPicker} onClose={() => { refreshPublicProfile(); setShowAvatarPicker(false) }} />
+                <DisplayNameDialog isDialogOpen={showDisplayName} onClose={() => { refreshPublicProfile(); setDisplayName(false) }} />
             </div>
         )
     }
