@@ -6,6 +6,15 @@ export const createElementConfig = (type, options = {}) => {
 
     switch (type) {
         case 'text':
+            return {
+                id: nanoid(),
+                type: 'dynamic',
+                x: 0, // Will be set on click
+                y: 0, // Will be set on click
+                width: 600,
+                zIndex: numElements + 1,
+                content: [defaultBlockSchemas(type)]
+            };
         case 'textbox':
             return {
                 id: nanoid(),

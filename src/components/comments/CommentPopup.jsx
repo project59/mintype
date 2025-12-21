@@ -144,7 +144,7 @@ const CommentPopup = ({
                 <DialogPanel
                     transition
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="dialogPanel !bg-white dark:!bg-zinc-950 !p-3 rounded-lg max-w-lg shadow absolute pointer-events-auto w-full max-h-96 overflow-y-auto"
+                    className="dialogPanel !bg-white dark:!bg-[#1f1f2d] !p-3 rounded-lg max-w-lg shadow absolute pointer-events-auto w-full max-h-96 overflow-y-auto"
                 >
                     {loading ? (
                         <div className="p-4 text-center">Loading...</div>

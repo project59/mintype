@@ -1,4 +1,4 @@
-// utils/cryptoUtils.js
+// utils/secureUtils.js
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -16,7 +16,7 @@ export async function deriveKEK(password, salt) {
     {
       name: "PBKDF2",
       salt,
-      iterations: 200000,
+      iterations: 800000,
       hash: "SHA-256",
     },
     keyMaterial,
@@ -50,7 +50,7 @@ export async function importKey(raw) {
     "raw", 
     raw, 
     "AES-GCM", 
-    true, // not extractable
+    false, // not extractable
     ["encrypt", "decrypt"]
   );
 }

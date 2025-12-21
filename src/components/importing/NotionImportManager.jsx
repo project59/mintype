@@ -67,9 +67,13 @@ const NotionImportManager = ({ onImportComplete }) => {
 
     return (
         <div className="space-y-2">
-            <h2 className='textTitle'>Upload Zip</h2>
+            <div className="textTitle flex justify-between items-center">
+                Notion Import
+                <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
+                    beta
+                </div>
+            </div>
             <p className='textRegular'>A new workspace will be created for this import. You can move your files out from there later if you wish.</p>
-            <p className='textRegular'>The notion importer is still a work in progress!</p>
 
             {error && (
                 <div className="error-message">

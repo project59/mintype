@@ -289,11 +289,12 @@ export async function initializeSearchIndex(db, masterKey) {
 
         let notesMeta = await dbService.getAllEntries();
         let notesContent = await dbService.getAllContent(masterKey);
-        // remove all notes where type = workspace
-        notesMeta = notesMeta.filter(note => note.type !== 'workspace');
+        // remove all notes where type = workspace and sensitive = true
+        notesMeta = notesMeta.filter(note => note.type !== 'workspace' && !note.sensitive);
 
         // Index all pages
         for (const page of notesMeta) {
+            console.log(page.sensitive)
             // get the notes content based on current page id
             const pageContent = notesContent.find(note => note.id === page.id);
             await indexPage(db, page, pageContent);

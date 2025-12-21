@@ -20,10 +20,10 @@ export default function RootLayout() {
         <div className={`app`}>
             <OnlineStatusProvider>
                 <DndProvider backend={HTML5Backend}>
-                    <SecureProvider>
-                        <UndoRedoProvider>
-                            <PomodoroProvider>
-                                <SupabaseAuthProvider>
+                    <SupabaseAuthProvider>
+                        <SecureProvider>
+                            <UndoRedoProvider>
+                                <PomodoroProvider>
                                     <GoogleDriveProvider>
                                         <SyncProvider autoSyncEnabled={true} syncInterval={30000} maxRetriesPerHour={120}>
                                             <SidebarProvider>
@@ -31,10 +31,10 @@ export default function RootLayout() {
                                             </SidebarProvider>
                                         </SyncProvider>
                                     </GoogleDriveProvider>
-                                </SupabaseAuthProvider>
-                            </PomodoroProvider>
-                        </UndoRedoProvider>
-                    </SecureProvider>
+                                </PomodoroProvider>
+                            </UndoRedoProvider>
+                        </SecureProvider>
+                    </SupabaseAuthProvider>
                 </DndProvider>
             </OnlineStatusProvider>
         </div>

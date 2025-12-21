@@ -21,12 +21,12 @@ export default function AppTitle({ closeNav, hideNavToggle = false }) {
                     <button title="Lock App" className="bg-rose-400/20 h-6 w-6 flex items-center justify-center rounded-lg text-rose-400 dark:text-rose-200" onClick={handleLockApp}>
                         <Lock size={12} />
                     </button>
-                    <button title="Settings" className="bg-slate-400/20 h-6 w-6 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-200" onClick={() => navigate('/settings/profile')}>
+                    <button title="Settings" className="bg-teal-400/20 h-6 w-6 flex items-center justify-center rounded-lg text-teal-400 dark:text-teal-200" onClick={() => navigate('/settings/profile')}>
                         <Bolt size={12} />
                     </button>
                     <ThemeToggleBtn />
-                    {!hideNavToggle && <button title="Hide Sidebar" onClick={closeNav} className="bg-slate-400/20 h-6 w-6 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-200" >
-                        <ChevronsLeft size={12} />
+                    {!hideNavToggle && <button title="Hide Sidebar" onClick={closeNav} className="bg-violet-400/20 h-6 w-6 flex items-center justify-center rounded-lg text-violet-400 dark:text-violet-200" >
+                        <ChevronsLeft size={14} />
                     </button>}
                 </div>
             </div>

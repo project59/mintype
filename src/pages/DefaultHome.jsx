@@ -71,7 +71,7 @@ export default function DefaultHome() {
                     </div>
                     <div className="flex gap-1">
                         <a href="https://github.com/project59/mintype" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
-                            beta v0.46
+                            beta v0.51
                         </a>
                         {/* <Link className="btnChip gap-1" to="#">
                             Install PWA
@@ -119,7 +119,7 @@ export default function DefaultHome() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2 py-12">
                     <FeatCard img="offline" title="Offline Support" description="Mintype is fully functional without internet. All notes are stored locally" />
-                    <FeatCard img="secure" title="Secure Storage" description="Extra security never hurts. Notes is encrypted locally and in Google Drive with your password" />
+                    <FeatCard img="secure" title="Secure Storage" description="Extra security never hurts. Notes are encrypted locally and in Google Drive with your password" />
                     <FeatCard img="storage" title="No Limits" description="No limits to the number of workspaces or pages. Store as much as your device can handle" />
                     <FeatCard img="drive-sync" title="Free Cloud Sync" description="Sync your notes to Google Drive free of charge. Easy setup and multi-device support is built in" />
                     <FeatCard img="rich-text" title="Beautiful Documents" description="Create rich documents with familiar block style editing and text formatting" />

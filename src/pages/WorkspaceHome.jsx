@@ -176,7 +176,7 @@ export default function WorkspaceHome() {
                             <div className="pb-4">
                                 <h4 className="font-semibold">Syncing</h4>
                                 <p className="textRegular">
-                                    Connet Google Drive to sync your notes across devices.
+                                    Connect Google Drive to sync your notes across devices.
                                 </p>
                             </div>
                             <Link to="/settings/sync" className="btnChip w-fit">

@@ -485,8 +485,8 @@ const FileStructureContent = ({ rootId }) => {
                 className={`p-2 flex-1`}
             >
                 {isOverQuickNotes && (
-                    <div className="h-10 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
-                        Move to Quick Note
+                    <div className="h-8 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
+                        Move to Quick Notes
                     </div>
                 )}
             </div>
@@ -586,8 +586,8 @@ const FileStructureContent = ({ rootId }) => {
                         </span>
                         <div className='p-2 w-full' ref={drop}>
                             {isOver && (
-                                <div className="h-10 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
-                                    Move to workspace
+                                <div className="h-8 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
+                                    Move to Workspace
                                 </div>
                             )}
                         </div>

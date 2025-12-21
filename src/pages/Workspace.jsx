@@ -12,11 +12,15 @@ import PageSectionWrapper from "../components/skeletons/PageSectionWrapper";
 import JSZip from "jszip";
 import toast from "react-hot-toast";
 import { SecureContext } from "../layouts/secure-context/SecureContext.jsx";
+import MarkdownExporter from "../components/exporting/MarkdownExporter.jsx";
+import JsonExporter from "../components/exporting/JsonExporter.jsx";
+import { newPageSchema } from "../utils/constants.js";
 
 export default function Workspace() {
     const { workspaceId } = useParams();
     const [workspace, setWorkspace] = useState({});
     const [allPages, setAllPages] = useState([]);
+    const [allPageIds, setAllPageIds] = useState([])
     const [favorites, setFavorites] = useState([]);
     const [recentPages, setRecentPages] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -44,6 +48,10 @@ export default function Workspace() {
             const nonTrashedfetchedPages = fetchedPages.filter(page => page.deleted === false);
             // remove the workspace from the list
             setAllPages(nonTrashedfetchedPages);
+
+            // Set all page IDs
+            const pageIds = nonTrashedfetchedPages.map(page => page.id);
+            setAllPageIds(pageIds);
 
             // Filter favorites
             const filteredFavorites = nonTrashedfetchedPages.filter(page => page?.isFavorite);
@@ -114,44 +122,37 @@ export default function Workspace() {
         }
     }
 
-    const exportWorkspaceToJSON = async () => {
-        const zip = new JSZip();
-        // get workspace meta entry
-        const workspaceMeta = await dbService.getMeta(workspaceId);
-        //get all workspace page meta entries
-        const allWorkspaceMetas = await dbService.getAllEntriesByRoot(workspaceId);
-        // remove the workspace entry itself
-        const allPages = allWorkspaceMetas.filter(page => page.id !== workspaceId);
+    const createNewPage = async (e) => {
+        e.stopPropagation();
 
-        zip.file("mintype-data.json", JSON.stringify({
-            name: "mintype-appdata",
-            created: Date.now(),
-            entries: [workspaceMeta, ...allPages]
-        }));
+        // random number between 1000 and 10000
+        const randomNum = Math.floor(Math.random() * (10000 - 1000 + 1)) + 1000;
 
-        // get the workspace content
-        const workspaceContent = await dbService.getContent(workspaceId, masterKey);
-        zip.file(`${workspaceId}.json`, JSON.stringify(workspaceContent))
-
-        await Promise.all(
-            allPages.map(async (page) => {
-                const pageContent = await dbService.getContent(page.id, masterKey);
-                zip.file(`${page.id}.json`, JSON.stringify(pageContent));
-            })
-        );
-
-        zip.generateAsync({ type: "blob" }).then((blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${workspaceMeta.name}-export-JSON.zip`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            toast.success('Workspace exported');
+        dbService.addEntry({
+            id: null, newContent: newPageSchema('document', randomNum + 1000000), parentId: workspaceId, rootId: workspaceId, masterKey
         });
-    }
+
+        fetchWorkspaceData();
+    };
+
+    const createNewWhiteboard = async (e) => {
+        e.stopPropagation();
+
+        // random number between 1000 and 10000
+        const randomNum = Math.floor(Math.random() * (10000 - 1000 + 1)) + 1000;
+
+        dbService.addEntry({
+            id: null, newContent: newPageSchema('whiteboard', randomNum + 1000000), parentId: workspaceId, rootId: workspaceId, masterKey
+        });
+
+        fetchWorkspaceData();
+    };
+
+    const handleExportComplete = (result) => {
+        if (result.success) {
+            toast.success(`Successfully exported ${result.count} pages`);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full">
@@ -168,9 +169,9 @@ export default function Workspace() {
             </PageHeaderWrapper>
 
             <PageSectionWrapper>
-                <div className="w-full space-y-1">
+                <div className="w-full flex flex-col gap-1">
                     <h2 className="font-semibold text-gray-900 dark:text-gray-100">Recent Pages</h2>
-                    <div className="space-y-1 ">
+                    <div className="space-y-1">
                         {recentPages.length > 0 ? (
                             recentPages.map((page) => (
                                 <div
@@ -198,6 +199,14 @@ export default function Workspace() {
                                 No pages yet. Create your first page to get started!
                             </p>
                         )}
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={createNewPage} className="btnPrimarySm w-fit">
+                            New Page
+                        </button>
+                        <button onClick={createNewWhiteboard} className="btnPrimarySm w-fit">
+                            New Whiteboard
+                        </button>
                     </div>
                 </div>
                 {/* Favorites */}
@@ -260,19 +269,14 @@ export default function Workspace() {
                         Export Workspace
                     </p>
                     <div className="flex gap-2 flex-wrap">
-                        <button
-                            className="btnChip"
-                            onClick={
-                                exportWorkspaceToJSON
-                            }
-                        >
-                            Export to JSON
-                        </button>
-                        <button
-                            className="btnChip"
-                        >
-                            {`Export to MD (Coming Soon)`}
-                        </button>
+                        <JsonExporter
+                            onExportComplete={handleExportComplete}
+                            workspaceId={workspaceId}
+                        />
+                        <MarkdownExporter
+                            pageIds={allPageIds}
+                            onExportComplete={handleExportComplete}
+                        />
                     </div>
 
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">

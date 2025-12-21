@@ -203,6 +203,7 @@ export default function SecureProvider({ children }) {
 
     const data = {
       version: 1,
+      iterations: 800000,
       salt: btoa(String.fromCharCode(...salt)),
       iv: btoa(String.fromCharCode(...iv)),
       ciphertext: btoa(String.fromCharCode(...ciphertext)),
@@ -222,7 +223,7 @@ export default function SecureProvider({ children }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "secure_notes_backup.json";
+    a.download = "mintype_encrypted_keys.json";
     a.click();
     URL.revokeObjectURL(url);
   };

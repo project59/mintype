@@ -101,7 +101,7 @@ export class OAuthHandler {
             // Wait for tokens
             const tokens = await this.waitForAuthCallback(popup);
 
-            console.log('Authorization complete, tokens:', tokens);
+            // console.log('Authorization complete, tokens:', tokens);
             return tokens;
         } catch (error) {
             console.error('Authorization failed:', error);

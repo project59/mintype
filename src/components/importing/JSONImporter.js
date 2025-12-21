@@ -27,7 +27,7 @@ export async function JSONImporter(zipFile, selectedRootId, masterKey) {
                 try {
                     const content = await file.async('text');
                     const pageData = JSON.parse(content);
-                    pageFiles.push({ filename: filename.replace('.json', '') , data: pageData });
+                    pageFiles.push({ filename: filename.replace('.json', ''), data: pageData });
                 } catch (error) {
                     failedFiles.push({
                         filename,
@@ -52,7 +52,11 @@ export async function JSONImporter(zipFile, selectedRootId, masterKey) {
                 await dbService.addMetaEntry({
                     id: metaEntry.id,
                     addToQueue: true,
-                    newContent: metaEntry
+                    newContent: {
+                        ...metaEntry,
+                        remoteFileId: null,
+                        wikiId: null
+                    }
                 });
                 importedCount++;
 
@@ -75,7 +79,7 @@ export async function JSONImporter(zipFile, selectedRootId, masterKey) {
                 });
             }
         }
-    } 
+    }
     // else {
     //     for (const { filename, data } of pageFiles) {
     //         try {
@@ -142,8 +146,8 @@ export async function JSONImporter(zipFile, selectedRootId, masterKey) {
         failedFiles,
         summary: {
             total: pageFiles.length + (metadataFile ? 1 : 0),
-            imported: importedCount,
-            failed: failedFiles.length,
+            success: importedCount,
+            failures: failedFiles.length,
             hasMetadata: !!metadataFile
         }
     };

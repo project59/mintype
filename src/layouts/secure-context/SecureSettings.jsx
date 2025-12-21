@@ -48,8 +48,11 @@ export default function SecureSettings() {
                 </div>
 
                 <div className="space-y-2 max-w-md">
-                    <h4 className="textTitle">Export Keys</h4>
-                    <p className="textRegular">Import this file on a new device to unlock your encrypted notes on the new device. It is important that you keep this file safetly stored at all times, and do not use another one.</p>
+                    <h4 className="textTitle">Export Key Bundle</h4>
+                    <p className="textRegular">This file contains your encrypted master key and recovery key. It can be imported during setup to unlock the app and your notes.</p>
+                    <p className="infoBox">
+                        If you sign into Mintype, we will safetly store an encrypted copy of this file for easy sign in on a new device.
+                    </p>
                     <button className="btnPrimary" onClick={handleExport}>
                         Export Master Key File
                     </button>
@@ -58,13 +61,13 @@ export default function SecureSettings() {
                 <div className="space-y-2 max-w-md">
                     <h4 className="textTitle">Reset Mintype</h4>
                     <p className="textRegular">Clear your local keys and notes on this device. You can do this if you want to start a new setup, or import another key.</p>
-                    <div className="bg-red-400/30 p-3 text-red-700 dark:text-red-200 rounded-lg text-sm">
-                        <p className="font-semibold text-base text-red-900 dark:text-white">Warning</p>
+                    <div className="infoBox">
+                        <p className="textTitle">Warning</p>
                         This action will remove all your notes from this device. It will also clear any queued notes which have not been synced yet.
                         Make sure you have exported a local copy of your notes or synced them to Google Drive.
                         <br />
                         <br />
-                        Make sure you have exported the master key file as well if you wish to recover your notes.
+                        Make sure you have exported the key budle as well if you wish to recover your notes.
                         <br />
                         <br />
                         This action cannot be undone.

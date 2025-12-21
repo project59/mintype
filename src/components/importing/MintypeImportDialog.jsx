@@ -20,7 +20,7 @@ export default function MintypeImportDialog() {
                 onClick={open}
                 className="btnPrimary"
             >
-                Mintype
+                Mintype JSON
             </Button>
 
             <Dialog open={isOpen} className="relative z-20 focus:outline-none" onClose={close}>

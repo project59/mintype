@@ -79,7 +79,7 @@ svg {
 }
 
 .btnPrimarySm {
-  @apply flex items-center justify-center bg-[#afffc7] dark:bg-[#afffc7] dark:hover:bg-[#99f0b3] hover:bg-[#99f0b3] text-black px-2 h-6 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
+  @apply flex items-center justify-center bg-indigo-300/30 dark:bg-indigo-500/30 border border-indigo-400/30 hover:bg-indigo-400/40 dark:hover:bg-indigo-400/40 text-indigo-700 dark:text-white px-2 h-6 rounded-full text-xs font-medium duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
 }
 
 .btnCreate {

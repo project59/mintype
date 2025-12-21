@@ -485,6 +485,8 @@ async function deleteEntry({ id, addToQueue = true }) {
         await deleteEntry({ id: child.id }); // Recursively delete children
     }
 
+    await deleteQuickNotesByRootId(id);
+
     // Delete the current entry
     await db.delete(STORE_NAME, id);
     await db.delete('pagedata', id);
@@ -492,6 +494,16 @@ async function deleteEntry({ id, addToQueue = true }) {
         await addOperation(id, 'delete', remoteFileId); // Add to sync queue
     }
     notifyUpdate();
+}
+
+// delete all quickNotes with a particular rootId
+async function deleteQuickNotesByRootId(rootId) {
+    await initializeDB();
+    const allEntries = await db.getAll(STORE_NAME);
+    const quickNotes = allEntries.filter(e => e.rootId === rootId && e.parentId === 'quickNote');
+    for (const quickNote of quickNotes) {
+        await deleteEntry({ id: quickNote.id });
+    }
 }
 
 // Duplicate an entry and its children

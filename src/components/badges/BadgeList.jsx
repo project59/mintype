@@ -8,7 +8,7 @@ const BadgeList = ({ badgeIds }) => {
                 const result = badgeCatalog[badge.id];
                 if (!badge) return null;
                 return (
-                    <div key={badge.id} className="flex items-center gap-1">
+                    <div key={badge} className="flex items-center gap-1">
                         <img className="w-12 h-12 rounded-xl" src={result?.icon || 'https://placehold.co/40x40'} alt={result?.name} />
                         <span>{result?.name}</span>
                     </div>

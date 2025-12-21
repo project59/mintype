@@ -4,26 +4,16 @@ import { X } from 'lucide-react';
 import dbService from '../../lib/dbService';
 import { SecureContext } from '../../layouts/secure-context/SecureContext';
 import { DialogTitle } from '@headlessui/react';
+import toast from 'react-hot-toast';
 
 const ZipImportComponent = ({ onClose }) => {
     const [file, setFile] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [error, setError] = useState(null);
     const [importResults, setImportResults] = useState(null);
-    const [roots, setRoots] = useState([]);
-    const [importId, setImportId] = useState(null);
-    const [mode, setMode] = useState('import_type'); // 'import_type' | 'import_upload'
+    const [mode, setMode] = useState('import_upload'); // 'import_type' | 'import_upload'
     const [isImportEncrypted, setIsImportEncrypted] = useState(false);
     const { masterKey } = useContext(SecureContext)
-
-    const getRootIds = async () => {
-        const roots = await dbService.getAllRootMeta();
-        setRoots(roots);
-    }
-
-    useEffect(() => {
-        getRootIds();
-    }, [])
 
     const handleFileSelect = (event) => {
         const selectedFile = event.target.files[0];
@@ -44,7 +34,14 @@ const ZipImportComponent = ({ onClose }) => {
 
         try {
             const results = await JSONImporter(file, null, masterKey);
+            console.log('Import results:', results);
             setImportResults(results);
+            // TODO: better success and error handling needed
+            toast.success(`Successfully imported`);
+
+            // if (results.failures.length > 0) {
+            //     toast.error('Failed files:', results.failures);
+            // }
         } catch (err) {
             setError(`Analysis failed: ${err.message}`);
         } finally {
@@ -52,23 +49,19 @@ const ZipImportComponent = ({ onClose }) => {
         }
     };
 
-    const reset = () => {
-        setFile(null);
-        setImportId(null);
-        setError(null);
-        const fileInput = document.getElementById('zip-upload');
-        if (fileInput) fileInput.value = '';
-    };
-
     return (
         <>
             {mode === 'import_type' && (
                 <>
-                    <DialogTitle className="textTitle">Import Type</DialogTitle>
+                    <DialogTitle className="textTitle flex justify-between items-center">
+                        JSON (Mintype) Import
+                        <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
+                            beta
+                        </div>
+                    </DialogTitle>
                     <p className='textRegular'>
                         Please select if your notes are encrypted or not to proceed with the import.
                     </p>
-                    <p className='textRegular'>The JSON importer is still a work in progress!</p>
                     {/* radio options for encrypted or not encrypted */}
                     <div className="space-y-2">
                         <div>
@@ -112,19 +105,16 @@ const ZipImportComponent = ({ onClose }) => {
 
             {mode === 'import_upload' && (
                 <>
-                    <h2 className='textTitle'>Select Workspace</h2>
-                    <p className='textRegular'>1. Click on the workspace you want to import into</p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                        {roots.map((workspace) => (
-                            <button className={`btnChip ${workspace.id === importId ? '!bg-blue-500 !text-white !font-semibold' : ''}`} key={workspace.id} onClick={() => setImportId(workspace.id)}>
-                                {workspace.name}
-                            </button>
-                        ))}
+                    <div className="textTitle flex justify-between items-center">
+                        Upload ZIP
+                        <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
+                            beta
+                        </div>
                     </div>
 
                     <div className="space-y-2">
                         <p className="textRegular">
-                            2. Upload a ZIP file containing your workspace and page JSON files
+                            Upload a ZIP file containing your mintype-data.json and page JSON files.
                         </p>
                         {/* {importId && ( */}
                         <div className="flex justify-between items-center">
@@ -133,7 +123,7 @@ const ZipImportComponent = ({ onClose }) => {
                                 type="file"
                                 accept=".zip"
                                 onChange={handleFileSelect}
-                                className="btnChip w-full"
+                                className=" w-full"
                             />
                         </div>
                         {/* )} */}
@@ -156,23 +146,17 @@ const ZipImportComponent = ({ onClose }) => {
                     <div className="flex justify-between">
                         <button
                             onClick={() => setMode('import_type')}
-                            className="btnSecondary"
+                            className="btnSecondary invisible"
                         >
                             Back
                         </button>
                         <div className='flex gap-2'>
                             <button
-                                onClick={reset}
-                                className="btnSecondary"
-                            >
-                                Reset
-                            </button>
-                            <button
                                 onClick={analyzeFile}
                                 disabled={!file || isAnalyzing}
                                 className="btnPrimary"
                             >
-                                {isAnalyzing ? 'Analyzing...' : 'Analyze ZIP'}
+                                {isAnalyzing ? 'Importing...' : 'Import'}
                             </button>
                         </div>
                     </div>

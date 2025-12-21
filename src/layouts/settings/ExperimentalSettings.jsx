@@ -31,7 +31,7 @@ export default function ExperimentalSettings() {
 
     return (
         <SettingsSkeleton title="Experimental">
-            <p className="textRegular max-w-md">
+            <p className="textRegular max-w-md infoBox">
                     These are experimental features available during the open beta. Use at your own risk.
                 </p>
             <div className="space-y-3 text-gray-400 mb-4">
