@@ -20,9 +20,8 @@ Mintype has the following privacy features out of the box:
 
 - All notes are encrypted on your device inside indexedDB.
 - Notes can only be read after unlocking the app with your password. Your password is never stored anywhere.
-- Notes are encrpyted prior to saving to Google Drive.
-- A recovery key is provded at startup incase you forget your password.
-- Additional feature to mark pages as sensitive, so your password is required again to view these pages. This is useful if you were to accidentally keep your device unattended and unlocked.
+- Notes are encrypted prior to saving to Google Drive.
+- Additional feature to mark pages as sensitive, so your password is required again to view these pages. This is useful if you were to accidentally keep your device unattended.
 
 ### Offline first
 
@@ -70,11 +69,11 @@ Only you can decipher your notes. They are encrypted with your password and stor
 
 ## Do you collect any data?
 
-There are no trackers or any other integrations in Mintype other that Supabase for authentication and Google APIs for drive sync. If you create an account, we do store your email for authentication services. Your email is not shared with any third parties.
+There are no trackers or any other integrations in Mintype other that Supabase for authentication and Google APIs for drive sync. If you create an account, we do store your email and encrypted copies of your keys for authentication services and easy sign in on new a new device. Your email is not shared with any third parties.
 
 ## Will Mintype become open source?
 
-There is geniune plans to make this project open source soon. All code involved in saving notes, syncing and secure storage are relased for auditing purposes. Please note that in its current state, this project will NOT build. I am not accepting dedicated contributors as of now, but you are welcome to provide feature requests and bug fixes via Github issues and in-app feedback.
+This project is planned to be fully open source soon. For now, all code involved in saving notes, syncing and secure storage are relased for auditing purposes. Please note that in its current state, this project will NOT build. I am not accepting dedicated contributors as of now, but you are welcome to provide feature requests and bug fixes via Github issues and in-app feedback.
 
 I plan to fully open source Mintype at 2000 github stars.
 
@@ -82,11 +81,11 @@ I plan to fully open source Mintype at 2000 github stars.
 
 An ElectronJS desktop version is planned, it will have the extra benefit of saving notes directly to disk (instead of indexedDB). This allows you to have your own sync mechanisms such as git repositories, one drive, syncthing etc... to sync and backup your notes.
 
-Mobile native apps are currently not planned. This is because the PWAs deliver almost all the features implemented.
+Mobile native apps are currently not planned. However they are likely given enough mobile native APIs become necessary.
 
 ## Are there any paid features?
 
-As of now there is none. I do plan to add a store later on which can contain items like page templates and pre-made elements to improve the note-taking experience. These will be a small price. The community is welcome to submit these templates/designs to us to support development. Other features like AI, OCR etc which require compute will also be paid if ever added. These will not be under a subscription however, but a pay as needed basis. I will not add subscriptions to Mintype.
+As of now there is none. I do plan to add a store later on which can contain items like page templates and pre-made elements to improve the note-taking experience. These will be a small price. The community is welcome to submit these templates/designs to us to support development. Mintype is a completely self funded project. Other features like AI, OCR etc which require compute will also be paid if ever added. These will not be under a subscription however, but a pay as needed basis. I will not add subscriptions to Mintype.
 
 ## How can i get in touch / submit issues?
 
