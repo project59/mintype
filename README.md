@@ -85,8 +85,6 @@ There are no trackers or any other integrations in Mintype other that Supabase f
 
 This project is planned to be fully open source soon. For now, all code involved in saving notes, syncing and secure storage are relased for auditing purposes. Please note that in its current state, this project will NOT build. I am not accepting dedicated contributors as of now, but you are welcome to provide feature requests and bug fixes via Github issues and in-app feedback.
 
-I plan to fully open source Mintype at 2000 github stars.
-
 ## Are native iOS, Android and Desktop (Electron) apps planned?
 
 An ElectronJS desktop version is planned, it will have the extra benefit of saving notes directly to disk (instead of indexedDB). This allows you to have your own sync mechanisms such as git repositories, one drive, syncthing etc... to sync and backup your notes.
