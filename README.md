@@ -24,7 +24,7 @@ Mintype has the following privacy features out of the box:
 - Additional feature to mark pages as sensitive, so your password is required again to view these pages. This is useful if you were to accidentally keep your device unattended.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/document.png" style="width: 70%;" />
+  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/document.png" />
 </p>
 
 ### Offline first
@@ -45,7 +45,7 @@ The document and whiteboard views allow for versatile note taking based on diffe
 - Touch support and mobile responsiveness for mobile devices.
 - Stylus support (coming soon).
 
-<p align="center">
+<p>
   <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/mobile.png" style="width: 200px;" />
 </p>
 
@@ -62,7 +62,7 @@ Mintype is built with a very familiar file structure, organization heirarchy and
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/workspace.png" style="width: 70%" />
+  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/workspace.png"  />
 </p>
 
 ## Is it available on MacOS / Linux / Android?
