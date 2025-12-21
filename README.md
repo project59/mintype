@@ -23,6 +23,10 @@ Mintype has the following privacy features out of the box:
 - Notes are encrypted prior to saving to Google Drive.
 - Additional feature to mark pages as sensitive, so your password is required again to view these pages. This is useful if you were to accidentally keep your device unattended.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/document.png" style="width: 70%;" />
+</p>
+
 ### Offline first
 
 Mintype can be used offline. No need to worry about needing internet to view your notes.
@@ -41,6 +45,10 @@ The document and whiteboard views allow for versatile note taking based on diffe
 - Touch support and mobile responsiveness for mobile devices.
 - Stylus support (coming soon).
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/mobile.png" style="width: 200px;" />
+</p>
+
 ### Built for a simple user experience
 
 Mintype is built with a very familiar file structure, organization heirarchy and minimal bloat. The goal is to get on with your note-taking without getting lost in features or complex UI. The mobile experience is also a top priority during development.
@@ -52,8 +60,10 @@ Mintype is built with a very familiar file structure, organization heirarchy and
 - Mobile app does not sacrifice any features, and has a very similair UX to desktop.
 - Very straightforward search feature (will be built out more with tags and filter options soon)
 
-![structure](images/structure.png)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/workspace.png" style="width: 70%" />
+</p>
 
 ## Is it available on MacOS / Linux / Android?
 
@@ -96,4 +106,4 @@ Follow for app updates here:
 - [Roadmap](https://github.com/orgs/project59/projects/1)
 
 
-![footer](https://github.com/project59/mintype/blob/main/public/Mintype.svg)
+<img src="https://raw.githubusercontent.com/project59/mintype/deeb93646c83e33f0d83c86b0f39d33e98d702b6/public/Mintype.svg" style="width: 100%;" />
