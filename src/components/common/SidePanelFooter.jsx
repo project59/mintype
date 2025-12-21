@@ -44,14 +44,14 @@ export default function SidePanelFooter() {
                     >
                         Give Feedback
                     </button>
-                    <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.51</a>
+                    <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.52</a>
                 </div>
 
                 <div className="flex gap-1">
                     <a title="Github" className="btnChip !p-1" href="https://github.com/project59/mintype">
                         <img className="w-4" src="https://images.seeklogo.com/logo-png/50/2/github-icon-logo-png_seeklogo-503247.png" alt="github-logo" />
                     </a>
-                    <a className="btnChip !p-1" href="https://discord.gg/XNWr87dB">
+                    <a className="btnChip !p-1" href="https://discord.gg/JyJH5seZqj">
                         <img className="w-4" src="https://img.icons8.com/color/512/discord-logo.png" alt="github-logo" />
                     </a>
                     <a title="Roadmap" className="btnChip !p-1 !w-6 flex items-center justify-center" href="https://github.com/orgs/project59/projects/1">

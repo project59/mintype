@@ -155,11 +155,11 @@ pre[class*="language-"] {
 
 /* table block css */
 .tableHeader {
-	@apply bg-slate-200/20 dark:bg-slate-600/20 text-gray-400 dark:text-gray-300 text-xs;
+	@apply text-gray-400 dark:text-gray-500 text-xs;
 }
 
 .tableHeaderTypeIcon {
-	@apply text-xs h-5 w-5 flex justify-center items-center rounded-md cursor-pointer bg-indigo-100 dark:bg-slate-700;
+	@apply h-5 w-5 flex justify-center items-center rounded-md cursor-pointer text-gray-500 hover:text-black dark:text-slate-400 dark:hover:text-white duration-200;
 }
 
 .dropdownPanel {
