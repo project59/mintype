@@ -30,7 +30,7 @@ dist-ssr
 src/render/document/*
 src/render/whiteboard/*
 src/render/shared/*
-src/apps/docs/*
+src/apps/community/*
 src/layouts/wiki/*
 package-lock.json
 

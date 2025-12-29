@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import domPurify from 'dompurify';
 
 export const COMMENT_TYPES = {
   suggestion: { label: 'Suggestion', color: '#fff3cd' },
@@ -221,4 +222,13 @@ export const clipboardContentToBlocks = (clipboardData) => {
   }
 
   return Promise.resolve(blocks);
+};
+
+export const sanitizePostHTML = (html) => {
+  return domPurify.sanitize(html, {
+    ALLOWED_TAGS: ['em', 'strong', 'a', 'br', 'p', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'div', 'span'],
+    ALLOWED_ATTR: ['href', 'class'],
+    // Only allow safe URL schemes
+    ALLOWED_URI_REGEXP: /^https:/i,
+  });
 };

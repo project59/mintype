@@ -86,7 +86,7 @@ export default function SetupDialog({ onSetup }) {
                                         className="btnPrimary w-fit"
                                         onClick={() => setMode("import")}
                                     >
-                                        Import Notes <Import size={14} className="inline-block ml-1" />
+                                        Configure <Import size={14} className="inline-block ml-1" />
                                     </button>
                                 </div>
                             </div>
