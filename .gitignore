@@ -39,3 +39,4 @@ _headers
 schema.sql
 syncing.txt
 src/utils/table-structure
+vercel.json

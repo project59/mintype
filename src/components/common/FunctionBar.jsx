@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronsRight, Home, Redo, Undo } from "lucide-react";
+import { ChevronRight, ChevronsRight, Edit, Home, Redo, Undo } from "lucide-react";
 import { useState, useEffect } from "react";
 import dbService from "../../lib/dbService";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -146,6 +146,17 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
         };
     }, [workspaceId, page]); // include workspaceId so switching workspaces rebuilds
 
+    // renaming logic
+    const [newTitle, setNewTitle] = useState('');
+    const [isRenaming, setIsRenaming] = useState(false);
+
+    const handleTitleChange = async () => {
+        // Call your database service to update the title
+        await dbService.updateMetaField({ id: pageId, fieldName: 'name', newValue: newTitle });
+        setIsRenaming(false);
+        setNewTitle('');
+    }
+
     return (
         <nav className="w-full z-20 flex items-center justify-between text-sm text-zinc-400 h-12 p-2.5 ">
             <div className="flex md:hidden">
@@ -166,7 +177,32 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                             <div key={crumb.id} className="flex items-center">
                                 {index > 0 && <span className="mx-1"><ChevronRight className="mt-0.5" size={16} /></span>}
                                 {crumb.current ? (
-                                    <span className="text-gray-900 dark:text-white font-medium max-w-[100px] md:max-w-none truncate">{crumb.name}</span>
+                                    <button onClick={() => navigate(crumb.path)} className={`truncate h-full w-full flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400`}>
+                                        {isRenaming ? (
+                                            <input
+                                                // text all select on focus
+                                                autoFocus
+                                                onFocus={(e) => e.target.select()}
+                                                type="text"
+                                                value={newTitle}
+                                                onChange={(e) => setNewTitle(e.target.value)}
+                                                onBlur={() => handleTitleChange()}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === 'Escape') {
+                                                        handleTitleChange();
+                                                    }
+                                                }}
+                                                className="ml-1 smallInput w-40"
+                                            />
+                                        ) : (
+                                            <div className={`group/crumb cursor-pointer flex-1 items-center flex gap-1 text-left text-sm truncate font-medium textNode`}>
+                                                {crumb.name}
+                                                <button className="group-hover/crumb:opacity-100 opacity-0 duration-200" onClick={(e) => { e.stopPropagation(); setIsRenaming(true); setNewTitle(crumb.name); }}>
+                                                    <Edit size={12} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </button>
                                 ) : (
                                     <button
                                         onClick={() => navigate(crumb.path)}

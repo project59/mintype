@@ -71,7 +71,7 @@ export default function DefaultHome() {
                     </div>
                     <div className="flex gap-1">
                         <a href="https://github.com/project59/mintype" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
-                            beta v0.52
+                            beta v0.54
                         </a>
                         {/* <Link className="btnChip gap-1" to="#">
                             Install PWA

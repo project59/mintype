@@ -37,26 +37,30 @@ export default function SidePanelFooter() {
             <DeletedFilesDialog />
 
             <div className="flex flex-col gap-1 mt-4">
-                <div className="flex gap-1">
-                    <button
-                        onClick={() => setIsOpen(true)}
-                        className="btnChip"
-                    >
-                        Give Feedback
-                    </button>
-                    <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.52</a>
-                </div>
+                <a href="https://community.mintype.app" className="flex flex-col gap-1 infoBox">
+                    <h4 className="font-semibold">Mintype Community pages are out!</h4>
+                    Share your ideas, get feedback, and view developer updates 🤓
+                </a>
 
                 <div className="flex gap-1">
                     <a title="Github" className="btnChip !p-1" href="https://github.com/project59/mintype">
                         <img className="w-4" src="https://images.seeklogo.com/logo-png/50/2/github-icon-logo-png_seeklogo-503247.png" alt="github-logo" />
                     </a>
-                    <a className="btnChip !p-1" href="https://discord.gg/JyJH5seZqj">
-                        <img className="w-4" src="https://img.icons8.com/color/512/discord-logo.png" alt="github-logo" />
+                    <a title="Discord" className="btnChip !p-1" href="https://discord.gg/JyJH5seZqj">
+                        <img className="w-4" src="https://img.icons8.com/color/512/discord-logo.png" alt="discord-logo" />
                     </a>
-                    <a title="Roadmap" className="btnChip !p-1 !w-6 flex items-center justify-center" href="https://github.com/orgs/project59/projects/1">
+                    <a title="Github Roadmap" className="btnChip !p-1 !w-6 flex items-center justify-center" href="https://github.com/orgs/project59/projects/1">
                         <Route className="text-emerald-400" size={12} />
                     </a>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => setIsOpen(true)}
+                            className="btnChip"
+                        >
+                            Give Feedback
+                        </button>
+                        <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.54</a>
+                    </div>
                 </div>
 
             </div>

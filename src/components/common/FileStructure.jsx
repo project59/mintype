@@ -219,7 +219,7 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                                 onChange={(e) => setNewTitle(e.target.value)}
                                 onBlur={() => handleTitleChange()}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                                    if (e.key === 'Enter' || e.key === 'Escape') {
                                         handleTitleChange();
                                     }
                                 }}
