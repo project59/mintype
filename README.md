@@ -104,5 +104,14 @@ Follow for app updates here:
 - [Roadmap](https://github.com/orgs/project59/projects/1)
 - [Community Forums](https://community.mintype.app/discussions)
 
+## Star History
+
+<a href="https://www.star-history.com/#project59/mintype&type=date&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=project59/mintype&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=project59/mintype&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=project59/mintype&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 <img src="https://raw.githubusercontent.com/project59/mintype/deeb93646c83e33f0d83c86b0f39d33e98d702b6/public/Mintype.svg" style="width: 100%;" />
