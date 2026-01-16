@@ -1,4 +1,4 @@
-# Mintype
+# Mintype - A free, zero-knowledge note taking app
 
 ![intro](images/intro.png)
 
@@ -12,7 +12,7 @@ PWA support is built in to provide a more native feel, especially on **Android**
 ## Features
 Mintype was a personal project to address some of my issues with current popular note taking apps. The app has grown to a state where I now feel it can be useful to others.
 
-Mintype is free to use, and will remain free to use.
+Mintype is free to use, and will remain free to use. Google Drive syncing is also free!
 
 ### Maximizing Privacy
 
@@ -102,6 +102,7 @@ Follow for app updates here:
 - [Github](https://github.com/project59/mintype)
 - [Github Issues](https://github.com/project59/mintype/issues)
 - [Roadmap](https://github.com/orgs/project59/projects/1)
+- [Community Forums](https://community.mintype.app/discussions)
 
 
 <img src="https://raw.githubusercontent.com/project59/mintype/deeb93646c83e33f0d83c86b0f39d33e98d702b6/public/Mintype.svg" style="width: 100%;" />
