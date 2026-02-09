@@ -65,7 +65,7 @@ export const defaultBlockSchemas = (type) => {
   switch (type) {
     case 'text': return { id: nanoid(), type: 'text', data: { text: 'Hi there!' } }
     case 'textbox': return { id: nanoid(), type: 'text', data: { text: '<p><span class=\"ql-font-Playpen\">Text box</span></p>' } }
-    case 'image': return { id: nanoid(), type: 'image', data: { width: 600, justify: '', sourceType: 'url || file', imageSource: 'url || data url' } }
+    case 'image': return { id: nanoid(), type: 'image', data: { width: 600, justify: '', sourceType: 'url', imageSource: '' } }
     case 'code': return { id: nanoid(), type: 'code', data: { language: 'jsx', code: '' } }
     case 'video': return { id: nanoid(), type: 'video', data: { videoUrl: '', justify: '', width: 600 } }
     case 'callout': return { id: nanoid(), type: 'callout', data: { type: 'info', emoji: null, content: '' } }

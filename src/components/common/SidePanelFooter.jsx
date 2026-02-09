@@ -59,7 +59,7 @@ export default function SidePanelFooter() {
                         >
                             Give Feedback
                         </button>
-                        <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.54</a>
+                        <a href="https://github.com/project59/mintype/issues" className="btnChip">beta 0.55</a>
                     </div>
                 </div>
 

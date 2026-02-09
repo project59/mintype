@@ -171,37 +171,57 @@ pre[class*="language-"] {
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(0px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-10px);
-  }
+	from {
+		opacity: 0;
+		transform: translateX(0px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateX(-10px);
+	}
 }
 
 .animate-slideIn {
-  animation: slideIn 0.2s ease-out forwards;
-  opacity: 0;
+	animation: slideIn 0.2s ease-out forwards;
+	opacity: 0;
 }
 
 .animate-slideIn:nth-child(1) {
-  animation-delay: 200ms;
+	animation-delay: 200ms;
 }
 
 .animate-slideIn:nth-child(2) {
-  animation-delay: 150ms;
+	animation-delay: 150ms;
 }
 
 .animate-slideIn:nth-child(3) {
-  animation-delay: 100ms;
+	animation-delay: 100ms;
 }
 
 .animate-slideIn:nth-child(4) {
-  animation-delay: 50ms;
+	animation-delay: 50ms;
 }
 
 .animate-slideIn:nth-child(5) {
-  animation-delay: 0ms;
+	animation-delay: 0ms;
+}
+
+.quillCustomToolbar .quill {
+	@apply !flex flex-col
+}
+
+.quillCustomToolbar .ql-toolbar {
+	position: sticky !important;
+	margin-top: 0px !important;
+	margin-bottom: 20px;
+	@apply bg-violet-50 dark:bg-violet-900/20 rounded-md h-fit min-h-8 flex items-center dark:text-white z-10 flex-wrap
+}
+
+.quillCustomToolbar .ql-stroke, .ql-picker-label, .ql-strike {
+	@apply dark:stroke-gray-300 dark:text-gray-300
+}
+
+.quillCustomToolbar .ql-formats {
+	@apply !flex
 }

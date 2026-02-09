@@ -1,8 +1,8 @@
 import { Button, Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
-import { ChevronsRight, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-export default function MintypeColorPicker({ hideRow1 = false, icon = null, value = { r: 255, g: 255, b: 255, a: 1 }, onChange }) {
+export default function MintypeColorPicker({ hideRow1 = false, icon = null, value = { r: 255, g: 255, b: 255, a: 1 }, onChange, onReset }) {
     const [color, setColor] = useState(value)
     const [isOpen, setIsOpen] = useState(false)
 
@@ -45,6 +45,11 @@ export default function MintypeColorPicker({ hideRow1 = false, icon = null, valu
         const colorWithAlpha = { ...newColor, a: newColor.a !== undefined ? newColor.a : 1 }
         setColor(colorWithAlpha)
         onChange?.(colorWithAlpha)
+        close()
+    }
+
+    const handleReset = () => {
+        onReset()
         close()
     }
 
@@ -92,7 +97,7 @@ export default function MintypeColorPicker({ hideRow1 = false, icon = null, valu
             <Button
                 onClick={open}
                 className="w-5 h-5 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                style={{ backgroundColor: getColorString(color) }}
+            // style={{ backgroundColor: getColorString(color) }}
             >
                 {icon}
             </Button>
@@ -152,22 +157,27 @@ export default function MintypeColorPicker({ hideRow1 = false, icon = null, valu
                                 {/* one for white and one for black */}
                                 <div className='flex gap-4 items-center'>
                                     <button
+                                        title='white'
                                         onClick={() => handleColorClick({ r: 255, g: 255, b: 255, a: 1 })}
                                         className="w-6 h-6 rounded-full hover:scale-110 transition-transform focus:outline-none border border-black focus:ring-2 focus:ring-blue-500"
                                         style={{ backgroundColor: getColorString({ r: 255, g: 255, b: 255, a: 1 }) }}
                                     />
 
                                     <button
+                                        title='black'
                                         onClick={() => handleColorClick({ r: 0, g: 0, b: 0, a: 1 })}
                                         className="w-6 h-6 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         style={{ backgroundColor: getColorString({ r: 0, g: 0, b: 0, a: 1 }) }}
                                     />
                                     {/* a button to clear color */}
                                     <button
-                                        onClick={() => handleColorClick({ r: 0, g: 0, b: 0, a: 0 })}
-                                        className="w-6 h-6 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500 border border-red-400/50"
+                                        title='clear formatting'
+                                        onClick={() => handleReset()}
+                                        className="w-6 h-6 flex items-center justify-center overflow-hidden rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500 border border-red-400/50"
                                         style={{ backgroundColor: getColorString({ r: 0, g: 0, b: 0, a: 0 }) }}
-                                    />
+                                    >
+                                        <X size={20} className='text-black' />
+                                    </button>
                                 </div>
                                 {/* show a system color picker */}
                                 <input type="color" className='rounded-full w-8' value={getColorString(color)} onChange={(e) => handleColorClick(hexToRgb(e.target.value))} />
