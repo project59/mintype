@@ -2,6 +2,13 @@
 
 ![intro](images/intro.png)
 
+## Version 2.0 will be out soon!!! Stay tuned - ETA mid October
+Version 2.0 vastly improves the Mintype experience, after strong considerations on the current implementation, I have streamlined the app and improved many faults existing in v1.0:
+- Much more versatile and dynamic whiteboard, with infinite canvas, more/better shapes, layering, connectors, grouping, exporting, drawing and board controls.
+- Improved markdown based editing experience, with custom markdown syntax to accommodate custom components. Documents are now more 'whole' and not separated into independent blocks.
+- New quick shortcut syntax to create markdown elements, such as sections and to-do items (@section[Introduction], @do[todo title - to-do description])
+- New google maps block: plan trips and mark locations with the new Google Maps embed view 
+
 ## Available on all devices - Open Beta out now 🍏
 This is a web-based app, so it is available on all devices that have browser support. I recommend Chrome and Firefox for best compatibility.
 
