@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
+import DOMPurify from 'dompurify';
 import { useSupabaseAuth } from '../../layouts/auth/SupabaseAuthProvider';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,9 +16,7 @@ const FeedbackDialog = ({ isOpen, onClose, template, onSubmit }) => {
     // Sanitize input to prevent XSS and trim whitespace
     const sanitizeInput = (input) => {
         if (typeof input !== 'string') return input;
-        return input
-            .trim()
-            .replace(/[<>]/g, '') // Remove potential HTML tags
+        return DOMPurify.sanitize(input.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
             .slice(0, 1000); // Limit length
     };
 
