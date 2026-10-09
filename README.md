@@ -98,10 +98,6 @@ An ElectronJS desktop version is planned, it will have the extra benefit of savi
 
 Mobile native apps are currently not planned. However they are likely given enough mobile native APIs become necessary.
 
-## Are there any paid features?
-
-As of now there is none. I do plan to add a store later on which can contain items like page templates and pre-made elements to improve the note-taking experience. These will be a small price. The community is welcome to submit these templates/designs to us to support development. Mintype is a completely self funded project. Other features like AI, OCR etc which require compute will also be paid if ever added. These will not be under a subscription however, but a pay as needed basis. I will not add subscriptions to Mintype.
-
 ## How can i get in touch / submit issues?
 
 Follow for app updates here:
