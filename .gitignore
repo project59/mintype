@@ -26,17 +26,14 @@ dist-ssr
 # env files
 .env
 
-# files yet to release
-src/render/document/*
-src/render/whiteboard/*
-src/render/shared/*
-src/apps/community/*
-src/layouts/wiki/*
 package-lock.json
 
 # Reference only files
 _headers
-schema.sql
-syncing.txt
-src/utils/table-structure
 vercel.json
+
+# Docs
+WHITEBOARD-PLAN.md
+AGENTS.md
+.claude
+.gitattributes

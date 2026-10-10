@@ -12,8 +12,8 @@ export default function DeletedFilesDialog() {
         setDeletedFiles(deletedFiles);
     }
 
-    const restoreDeleteFile = async (id, rootId) => {
-        await dbService.restoreTrashedFile(id, rootId);
+    const restoreDeleteFile = async (id) => {
+        await dbService.restoreTrashedFile(id);
         await getDeletedFiles();
     }
 
@@ -67,7 +67,7 @@ export default function DeletedFilesDialog() {
                                         </div>
                                         <div className='flex gap-1'>
 
-                                            <button className='btnChip h-6' title='Restore' onClick={() => restoreDeleteFile(file.id, file.rootId)}>
+                                            <button className='btnChip h-6' title='Restore' onClick={() => restoreDeleteFile(file.id)}>
                                                 <FolderOutput size={12} />
                                             </button>
                                             {/* <button className='btnDestructiveSm' title='Delete permanently' onClick={() => deletePermanently(file.id)}>

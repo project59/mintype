@@ -21,13 +21,10 @@ export default function PasswordPrompt({ onSubmit }) {
                     <h2 className="textTitle">
                         {useRecovery ? "Enter Recovery Key" : "Enter Password"}
                     </h2>
-                    <div className="infoBox">
-                        NOTE: Mintype is currently in beta. Data loss is possible, bugs and glitches are expected. Thank you for using Mintype 🎄
-                    </div>
                     <input
                         type="password"
                         className="baseInput"
-                        autoFocus
+                        data-autofocus
                         value={password}
                         onKeyDown={handleKeyDown}
                         onChange={(e) => setPassword(e.target.value)}

@@ -29,7 +29,7 @@ export default function NotionImportDialog({ onImportComplete }) {
                         transition
                         className="dialogPanel"
                     >
-                        <NotionImportManager onImportComplete={onImportComplete} />
+                        <NotionImportManager onClose={close} onImportComplete={onImportComplete} />
                     </DialogPanel>
                 </div>
             </Dialog>

@@ -27,6 +27,10 @@ export default function SettingsLayout() {
                         Import
                     </button>
 
+                    <button className={`${pathname === '/settings/export' ? 'font-semibold text-black dark:text-white bg-slate-400/10' : ''} w-full py-1.5 px-2 rounded-md text-left text-sm`} onClick={() => navigate('/settings/export')}>
+                        Export
+                    </button>
+
                     <button className={`${pathname === '/settings/experimental' ? 'font-semibold text-black dark:text-white bg-slate-400/10' : ''} w-full py-1.5 px-2 rounded-md text-left text-sm`} onClick={() => navigate('/settings/experimental')}>
                         Experimental
                     </button>

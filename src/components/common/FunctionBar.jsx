@@ -8,7 +8,7 @@ import PomodoroTimer from "../pomodoro/PomodoroTimer";
 import { useSidebar } from "../../layouts/root/SidebarContext.jsx";
 import DriveSyncPopup from "../../drivesync/DriveSyncPopup.jsx";
 
-export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePreferences, triggerRefresh }) {
+export default function FunctionBar({ handleUndo, handleRedo, triggerRefresh, markdown }) {
     const [breadcrumbs, setBreadcrumbs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(null);
@@ -88,7 +88,7 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                 breadcrumbsArray.push({
                     id: workspaceId,
                     name: workspace.name || `Workspace ${workspaceId}`,
-                    path: `/${isWiki ? 'wiki' : 'workspace'}/${workspaceId}`,
+                    path: `/workspace/${workspaceId}`,
                     type: 'workspace'
                 });
             }
@@ -112,7 +112,7 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                         {
                             id: parent.id,
                             name: parent.name || `Page ${parent.id}`,
-                            path: `/${isWiki ? 'wiki' : 'workspace'}/${page.rootId}/${parent.id}`,
+                            path: `/workspace/${page.rootId}/${parent.id}`,
                             type: 'page'
                         }
                     ];
@@ -127,7 +127,7 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                 breadcrumbsArray.push({
                     id: page.id,
                     name: page.name || page.title || `Page ${page.id}`,
-                    path: `/${isWiki ? 'wiki' : 'workspace'}/${page.rootId}/${page.id}`,
+                    path: `/workspace/${page.rootId}/${page.id}`,
                     type: 'page',
                     current: true
                 });
@@ -160,7 +160,7 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
     return (
         <nav className="w-full z-20 flex items-center justify-between text-sm text-zinc-400 h-12 p-2.5 ">
             <div className="flex md:hidden">
-                <Link to={`/${isWiki ? 'wiki' : 'workspace'}`} className="ml-8 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-zinc-800 dark:hover:text-gray-300 p-1 rounded-lg duration-200">
+                <Link to="/workspace" className="ml-8 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-zinc-800 dark:hover:text-gray-300 p-1 rounded-lg duration-200">
                     <Home size={14} />
                 </Link>
             </div>
@@ -168,7 +168,7 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                 <button className={`p-1 ${isNavOpen ? 'hidden' : 'flex'}`}>
                     <ChevronsRight size={16} className="hover:text-gray-700 dark:hover:text-gray-300 duration-200" onClick={() => setIsNavOpen(true)} />
                 </button>
-                <Link to={`/${isWiki ? 'wiki' : 'workspace'}`} className="mr-1 hover:text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-300 p-1 rounded-lg duration-200">
+                <Link to="/workspace" className="mr-1 hover:text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-300 p-1 rounded-lg duration-200">
                     <Home size={14} />
                 </Link>
                 {!loading && breadcrumbs.length > 0 && (
@@ -217,24 +217,22 @@ export default function FunctionBar({ handleUndo, handleRedo, isWiki, updatePref
                     </>
                 )}
             </div>
-            {!isWiki && (
-                <div className="flex gap-1 items-center">
-                    <PomodoroTimer />
-                    <div className={`gap-1 items-center ${!page ? 'hidden' : 'flex'}`}>
-                        <button className="text-slate-600 dark:text-slate-200 hover:rounded-[50px] btnBase w-7 h-7 bg-slate-400/20 rounded-l-lg rounded-r" onClick={handleUndo} title="Undo">
-                            <Undo size={12} />
-                        </button>
-                        <button className="text-slate-600 dark:text-slate-200 hover:rounded-[50px] btnBase w-7 h-7 bg-slate-400/20 rounded-r-lg rounded-l" onClick={handleRedo} title="Redo">
-                            <Redo size={12} />
-                        </button>
-                        <PageOptionsPopup page={page} setFavorite={setFavorite} setSensitive={setSensitive} setWidth={setWidth} updatePreferences={updatePreferences} />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <SearchBar />
-                        <DriveSyncPopup />
-                    </div>
+            <div className="flex gap-1 items-center">
+                <PomodoroTimer />
+                <div className={`gap-1 items-center ${!page ? 'hidden' : 'flex'}`}>
+                    <button className="text-slate-600 dark:text-slate-200 hover:rounded-[50px] btnBase w-7 h-7 bg-slate-400/20 rounded-l-lg rounded-r" onClick={handleUndo} title="Undo">
+                        <Undo size={12} />
+                    </button>
+                    <button className="text-slate-600 dark:text-slate-200 hover:rounded-[50px] btnBase w-7 h-7 bg-slate-400/20 rounded-r-lg rounded-l" onClick={handleRedo} title="Redo">
+                        <Redo size={12} />
+                    </button>
+                    <PageOptionsPopup page={page} setFavorite={setFavorite} setSensitive={setSensitive} setWidth={setWidth} markdown={markdown} />
                 </div>
-            )}
+                <div className="flex items-center gap-1">
+                    <SearchBar />
+                    <DriveSyncPopup />
+                </div>
+            </div>
         </nav>
     );
 }

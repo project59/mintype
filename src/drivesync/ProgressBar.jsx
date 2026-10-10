@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSyncProgress } from "./GoogleDriveContext";
+import { useSyncProgress } from "../lib/syncProgress";
 
 export default function ProgressBar() {
     const [progress, setProgress] = useState({ total: 0, completed: 0, percentage: 0 });

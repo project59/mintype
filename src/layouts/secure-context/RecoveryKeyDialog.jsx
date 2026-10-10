@@ -34,7 +34,7 @@ export default function RecoveryKeyDialog({ recoveryKey, onClose, showDialog, on
                             </div>
                             <div className="flex gap-2">
                                 <button className="btnSecondary w-full" onClick={downloadRecoveryKey}>
-                                    Download Recovery Key
+                                    Download
                                 </button>
                                 <button className="btnPrimary w-full" disabled={!downloaded} onClick={() => setMode('bundle')}>
                                     Continue

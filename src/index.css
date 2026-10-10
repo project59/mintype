@@ -1,10 +1,10 @@
-/* @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inclusive+Sans:ital,wght@0,300..700;1,300..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,7 +12,7 @@
 
 
 :root {
-  font-family: Figtree, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -39,31 +39,17 @@ svg {
     .printme  { display: block;}
 }
 
-/* html {
-  padding-top: env(safe-area-inset-top);
-  padding-right: env(safe-area-inset-right);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-} */
+h1, h2, h3, h4, h5, h6 {
+  @apply text-black dark:text-white;
+}
 
 .no-scrollbar{
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
   scrollbar-width: none;  /* Firefox */
 }
 
-.diagonalStripeBg{
-  background-color: #ffffff;
-  opacity: 1;
-  background-size: 11px 11px;
-  background-image: repeating-linear-gradient(45deg, #e6e6e6 0, #e6e6e6 1.1px, #ffffff 0, #ffffff 50%);
-}
-
 .rightPane{
   @apply overflow-x-hidden overflow-y-auto flex-1 flex flex-col bg-slate-100 dark:bg-[#10101e];
-}
-
-.thinBorder{
- @apply border-gray-200 dark:border-zinc-700
 }
 
 .textH2{
@@ -82,24 +68,12 @@ svg {
   @apply flex items-center justify-center bg-indigo-300/30 dark:bg-indigo-500/30 border border-indigo-400/30 hover:bg-indigo-400/40 dark:hover:bg-indigo-400/40 text-indigo-700 dark:text-white px-2 h-6 rounded-full text-xs font-medium duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
 }
 
-.btnCreate {
-  @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full font-semibold border-2 border-dashed duration-200;
-}
-
 .btnSecondary {
   @apply flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-black px-3 h-9 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
 }
 
-.btnSecondarySm {
-  @apply flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-black px-2 h-6 rounded-full text-xs font-semibold duration-200 disabled:opacity-70 disabled:cursor-not-allowed;
-}
-
 .btnChip{
   @apply rounded-full text-xs bg-slate-400/10 hover:bg-slate-400/20 data-[active]:bg-slate-400/20 duration-200 text-gray-800 dark:text-gray-200 flex items-center gap-1 p-1 px-2 hover:shadow-sm;
-}
-
-.btnRound{
-  @apply h-5 w-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-900 text-zinc-700 dark:text-gray-300 rounded-full font-medium text-xs duration-200 flex gap-2 justify-center items-center;
 }
 
 .btnAction{
@@ -118,20 +92,12 @@ svg {
   @apply p-1 text-sm rounded-md h-6 bg-slate-100 dark:bg-[#222036] text-black dark:text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none;
 }
 
-.tableInput{
-  @apply bg-transparent text-sm text-gray-900 dark:text-gray-100 w-full border-0 p-1 focus:outline-none;
-}
-
 .baseInput{
   @apply p-1 px-3 w-full text-sm rounded-xl h-9 bg-gray-100 dark:bg-[#222036] text-black dark:text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none;
 }
 
 .dropdownItem{
   @apply px-2 py-1.5 rounded-md text-gray-700 dark:text-slate-300 dark:data-[active]:bg-slate-800 flex items-center gap-2 data-[active]:bg-gray-100 disabled:opacity-40 duration-200;
-}
-
-.dropdownItemSm{
-  @apply px-1.5 py-1 rounded-md text-gray-700 dark:text-slate-300 dark:data-[active]:bg-slate-800 flex items-center gap-2 data-[active]:bg-gray-100 disabled:opacity-40 duration-200;
 }
 
 .dialogBackdrop{
@@ -150,149 +116,40 @@ svg {
   @apply transition-all ease-in-out duration-300 flex items-center justify-center gap-1;
 }
 
-.quillStyles{
-  /* @apply leading-loose; */
-  @apply text-slate-900 dark:text-slate-300/80;
-}
-.quillStyles strong, h1, h2, h3, h4, h5, h6{
-  @apply text-black dark:text-white;
-}
+/* Bottom sheets: what popovers become on phones (see components/common/ResponsivePopover.jsx).
+   A sheet is as tall as its content, at most half the screen, and scrolls beyond that. They sit
+   in the components layer so utility classes on an element can override them. */
+@layer components {
+  /* Slides up on open and down on close, using the data-closed/data-leave attributes that
+     Headless UI transitions set (PopoverPanel `transition`, or a Transition wrapper). */
+  .sheetPanel {
+    @apply fixed inset-x-0 bottom-0 z-50 max-h-[50dvh] w-full overflow-y-auto overscroll-contain rounded-t-2xl bg-slate-100 p-3 pb-[calc(0.8rem+env(safe-area-inset-bottom))] dark:bg-[#10101e];
+    @apply transition-transform duration-200 ease-out data-[closed]:translate-y-full data-[leave]:duration-150 data-[leave]:ease-in motion-reduce:transition-none;
+  }
 
-.quillStyles h1{
-  font-size: 1.875rem !important;
-  font-weight: 600 !important;
-  /* line-height: 2.25rem !important; */
-  margin-top: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
+  .sheetGrid {
+    @apply grid gap-2;
+  }
 
-.quillStyles h2{
-  font-size: 1.5rem !important;
-  font-weight: 600 !important;
-  /* line-height: 1.75rem !important; */
-  margin-top: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
+  .sheetButton {
+    @apply flex min-w-0 flex items-center gap-2 rounded-2xl bg-slate-400/20 px-3 h-12 text-center text-xs font-medium text-zinc-700 disabled:opacity-35 dark:bg-[#2a2d3d] dark:text-zinc-200;
+  }
 
-.quillStyles h3{
-  font-size: 1.25rem !important;
-  font-weight: 600 !important;
-  /* line-height: 1.5rem !important; */
-  margin-top: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
+  .sheetButton[aria-pressed='true'] {
+    @apply bg-indigo-500 text-white;
+  }
 
-.quillStyles h4{
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  /* line-height: 1.25rem !important; */
-  margin-top: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
+  .sheetButtonDanger {
+    @apply !text-white !bg-red-500;
+  }
 
-.quillStyles h5{
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  /* line-height: 1rem !important; */
-  margin-top: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
+  .sheetButtonPrimary {
+    @apply !bg-indigo-500 !text-white h-12;
+  }
 
-.quillStyles h6{
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  /* line-height: 0.875rem !important; */
-  margin-top: 1rem !important;
-  margin-bottom: 0.5rem !important;
-}
-
-.ql-code-block-container{
-  @apply !bg-slate-50 !rounded-lg dark:!bg-[#1c2129] !text-black dark:!text-white !p-4;
-}
-
-.quillStyles p{
-  @apply text-base font-normal leading-normal !mb-2;
-}
-
-.quillStyles a{
-  @apply !text-indigo-500 dark:!text-indigo-300 cursor-pointer !no-underline hover:!underline;
-}
-
-[data-page-id]{
-  @apply bg-indigo-300/20;
-}
-
-.quillStyles ul{
-  @apply !text-base !font-normal !list-disc pl-3;
-}
-
-.quillStyles li{
-  @apply leading-7 p-1 pl-3;
-}
-
-.ql-editor ul{
-  @apply !text-zinc-800;
-}
-
-.quillStyles ol{
-  @apply !text-base !font-normal !list-decimal !pl-2 !pb-2;
-}
-
-.quillStyles blockquote{
-  @apply text-base font-normal border-l-4 border-gray-300 pl-4;
-}
-
-.quillStyles pre{
-  @apply text-base font-normal bg-gray-100  p-4 rounded-lg ;
-}
-
-.quillStyles code{
-  @apply !text-sm text-blue-900 dark:text-violet-400 !bg-slate-200 dark:!bg-zinc-600/40 !p-0.5 !px-1 !rounded;
-}
-
-.quillStyles img{
-  @apply w-full h-auto  rounded-md;
-}
-
-.quillStyles strong{
-  @apply font-semibold;
-}
-/* TABLE STYLES */
-
-.quillStyles td{
-  @apply !p-1.5 text-sm !border-gray-400;
-}
-/* target anchor tags inside td */
-.quillStyles td a{
-  @apply !text-indigo-500 !underline;
-}
-
-.ql-indent-1{
-  @apply !pl-10;
-}
-
-.ql-indent-2{
-  @apply !pl-14;
-}
-
-.ql-editor {
-  @apply !m-0 !p-0 focus:outline-none;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-}
-
-.ql-editor::before{
-  text-decoration: none ! important;
-  font: normal normal normal 16px/19px Inter !important;
-  margin-left: -14px;
-  margin-top: 3px;
-  @apply !text-gray-300 dark:!text-gray-600;
-}
-.ql-container {
-  @apply !border-none;
-}
-
-.ql-toolbar{
-  @apply rounded mb-2 !border-none !p-0 absolute -top-8;
+  .sheetInput {
+    @apply min-w-0 flex-1 rounded-2xl bg-slate-400/20 px-3 h-12 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-blue-500 dark:bg-[#2a2d3d] dark:text-zinc-100;
+  }
 }
 
 .tl-shape-indicator {
@@ -306,142 +163,170 @@ svg {
 }
 
 
-/* Add to your CSS file */
-.quill-comment {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 2px;
-  padding: 1px 2px;
+/* ============ Tiptap editor styles ============ */
+.tiptap {
+  @apply text-slate-900 dark:text-slate-300/80 leading-relaxed text-base outline-none;
+  min-height: 100%;
+}
+.tiptap:focus,
+.tiptap:focus-visible {
+  outline: none;
+}
+.tiptap .ProseMirror-selectednode {
+  outline: 2px solid rgb(99 102 241 / 0.45);
+  outline-offset: 3px;
+  border-radius: 0.375rem;
+  background-color: rgb(99 102 241 / 0.08);
+}
+.dark .tiptap .ProseMirror-selectednode {
+  outline-color: rgb(165 180 252 / 0.55);
+  background-color: rgb(129 140 248 / 0.12);
+}
+.tiptap h1, .tiptap h2, .tiptap h3, .tiptap h4, .tiptap h5, .tiptap h6 {
+  @apply text-black dark:text-white font-semibold mt-4 mb-2;
+}
+.tiptap h1 { font-size: 1.875rem; line-height: 2.25rem; }
+.tiptap h2 { font-size: 1.5rem; line-height: 2rem; }
+.tiptap h3 { font-size: 1.25rem; line-height: 1.75rem; }
+.tiptap h4 { font-size: 1.125rem; line-height: 1.5rem; }
+.tiptap h5 { font-size: 1rem; line-height: 1.5rem; }
+.tiptap h6 { font-size: 0.875rem; line-height: 1.25rem; }
+.tiptap p { margin-bottom: 0.5rem; }
+.tiptap a {
+  @apply text-indigo-500 dark:text-indigo-300 cursor-pointer no-underline hover:underline;
+}
+.tiptap ul { @apply list-disc pl-6 mb-2; }
+.tiptap ol { @apply list-decimal pl-6 mb-2; }
+.tiptap blockquote {
+  @apply border-l-4 border-gray-300 dark:border-zinc-700 pl-4 my-2 text-gray-600 dark:text-gray-300;
+}
+.tiptap pre {
+  @apply bg-gray-50 dark:bg-[#2e273b] rounded-lg p-4 overflow-x-auto border border-black/10 border-t-0 dark:border-white/15;
+}
+.tiptap code {
+  @apply text-sm text-blue-900 dark:text-violet-400 bg-slate-200 dark:bg-zinc-600/40 px-1 rounded;
+}
+.tiptap pre code {
+  @apply bg-transparent p-0 text-inherit;
+}
+.code-block-header {
+  @apply flex justify-end rounded-t-lg bg-gray-50 px-1.5 py-1.5 border border-black/10 dark:bg-[#2e273b] dark:border-white/15;
+}
+.code-block-wrapper > pre {
+  @apply rounded-t-none;
+}
+.tiptap pre .token.comment,
+.tiptap pre .token.prolog,
+.tiptap pre .token.doctype,
+.tiptap pre .token.cdata { color: #6b7280; }
+.tiptap pre .token.punctuation { color: #9ca3af; }
+.tiptap pre .token.property,
+.tiptap pre .token.tag,
+.tiptap pre .token.boolean,
+.tiptap pre .token.number,
+.tiptap pre .token.constant,
+.tiptap pre .token.symbol { color: #c084fc; }
+.tiptap pre .token.selector,
+.tiptap pre .token.attr-name,
+.tiptap pre .token.string,
+.tiptap pre .token.char,
+.tiptap pre .token.builtin { color: #86efac; }
+.tiptap pre .token.operator,
+.tiptap pre .token.entity,
+.tiptap pre .token.url,
+.tiptap pre .language-css .token.string,
+.tiptap pre .style .token.string { color: #67e8f9; }
+.tiptap pre .token.atrule,
+.tiptap pre .token.attr-value,
+.tiptap pre .token.keyword { color: #93c5fd; }
+.tiptap pre .token.function,
+.tiptap pre .token.class-name { color: #fcd34d; }
+.tiptap pre .token.regex,
+.tiptap pre .token.important,
+.tiptap pre .token.variable { color: #fca5a5; }
+.tiptap img {
+  @apply rounded-md max-w-full h-auto;
+}
+.tiptap hr {
+  @apply my-4 border-slate-300 dark:border-zinc-700;
+}
+.tiptap p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 
-.quill-comment:hover {
-  @apply bg-blue-200 dark:bg-blue-300/70;
+/* Tables: sized to their content, at least full width; the wrapper scrolls wide tables. */
+.tiptap table {
+  @apply border-collapse min-w-full;
+}
+.tiptap th, .tiptap td {
+  @apply border border-zinc-300 dark:border-zinc-700 px-2 py-1 relative align-top;
+  min-width: 7rem;
+}
+.tiptap th {
+  @apply bg-zinc-100 dark:bg-zinc-900 font-semibold;
+}
+.tiptap table .selectedCell::after {
+  background: rgba(99, 102, 241, 0.15);
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+.tiptap .column-resize-handle {
+  @apply bg-indigo-500 absolute bottom-0 right-0 top-0 pointer-events-none;
+  width: 4px;
+}
+.tiptap .resize-cursor { cursor: col-resize; }
+
+/* Callout */
+.callout {
+  @apply rounded-lg my-2;
+}
+.callout-info {
+  background-color: #f3f4f6;
+  border: 1px solid #8b8b8a77;
+}
+.dark .callout-info {
+  background-color: rgb(26, 26, 26);
+}
+.callout-warning {
+  background-color: #fffbea;
+  border: 1px solid #f1df9f;
+}
+.dark .callout-warning {
+  background-color: #302814;
+  border-color: #735d25;
+}
+.callout-error {
+  background-color: #ffe8e8;
+  border: 1px solid #f3c2c7;
+}
+.dark .callout-error {
+  background-color: #3b0d15;
+  border-color: #762638;
+}
+.callout-success {
+  background-color: #dff8ee;
+  border: 1px solid #b5e8d3;
+}
+.dark .callout-success {
+  background-color: #062a20;
+  border-color: #145541;
 }
 
-/* target data-comment-type where type is "suggestion" */
-[data-comment-type="suggestion"] {
-  @apply bg-yellow-300/40 cursor-pointer border-y border-dashed border-yellow-400 text-gray-900 dark:text-white;
+/* YouTube */
+.youtube-iframe-wrap iframe {
+  width: 100%;
+  height: 100%;
 }
 
-/* target data-comment-type where type is "question" */
-[data-comment-type="remove"] {
-  @apply bg-red-300/40 line-through cursor-pointer border-y border-dashed border-red-400 text-gray-900 dark:text-white;
-}
-
-/* target data-comment-type where type is "correction" */
-[data-comment-type="correction"] {
-  @apply bg-violet-300/40 cursor-pointer border-y border-dashed border-violet-400 text-gray-900 dark:text-white;
-}
-
-/* target data-comment-type where type is "praise" */
-[data-comment-type="praise"] {
-  @apply bg-green-300/40 cursor-pointer border-y border-dashed border-green-400 text-gray-900 dark:text-white;
-}
-
-
-.ql-picker.ql-font {
-  .ql-picker-item {
-    font-size: 0;
-    &:before {
-      content: attr(data-value) !important;
-      font-size: 14px;
-    }
-  }
-}
-
-.ql-picker.ql-font{
-  .ql-active {
-    &:before {
-      content: attr(data-value) !important;
-      font-size: 14px;
-    }
-  }
-}
-.ql-picker.ql-font .ql-picker-label[data-value="Onest"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="Onest"]::before
-{
-    font-family: "Onest", cursive;;
-    content: "Onest" !important;
-}
-
-.ql-picker.ql-font .ql-picker-label[data-value="Figtree"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="Figtree"]::before
-{
-    font-family: "Figtree", cursive;;
-    content: "Figtree" !important;
-}
-.ql-picker.ql-font .ql-picker-label[data-value="Inter"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="Inter"]::before
-{
-    font-family: "Inter", cursive;;
-    content: "Inter" !important;
-}
-.ql-picker.ql-font .ql-picker-label[data-value="JetBrains"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="JetBrains"]::before
-{
-    font-family: "JetBrains Mono", cursive;;
-    content: "JetBrains Mono" !important;
-}
-.ql-picker.ql-font .ql-picker-label[data-value="Inclusive"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="Inclusive"]::before
-{
-    font-family: "Inclusive Sans", cursive;;
-    content: "Inclusive Sans" !important;
-}
-.ql-picker.ql-font .ql-picker-label[data-value="Bebas"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="Bebas"]::before
-{
-    font-family: "Bebas Neue", cursive;;
-    content: "Bebas Neue" !important;
-}
-.ql-picker.ql-font .ql-picker-label[data-value="Playpen"]::before, 
-.ql-picker.ql-font .ql-picker-item[data-value="Playpen"]::before
-{
-    font-family: "Playpen Sans", cursive;;
-    content: "Playpen Sans" !important;
-}
-
-
-.ql-font-Onest {
-  font-family: "Onest";
-}
-.ql-font-Figtree {
-  font-family: "Figtree";
-}
-.ql-font-Inter {
-  font-family: "Inter";
-}
-.ql-font-JetBrains {
-  font-family: "JetBrains Mono";
-}
-.ql-font-Inclusive {
-  font-family: "Inclusive Sans";
-}
-.ql-font-Bebas {
-  font-family: "Bebas Neue";
-}
-.ql-font-Playpen {
-  font-family: "Playpen Sans";
-}
-
-
-.ql-size-8px { font-size: 8px !important; }
-.ql-size-12px { font-size: 12px !important; }
-.ql-size-14px { font-size: 14px !important; }
-.ql-size-16px { font-size: 16px !important; }
-.ql-size-20px { font-size: 20px !important; }
-.ql-size-24px { font-size: 24px !important; }
-.ql-size-32px { font-size: 32px !important; }
-.ql-size-48px { font-size: 48px !important; }
-.ql-size-64px { font-size: 64px !important; }
-.ql-size-96px { font-size: 96px !important; }
-
-
-/* Base text color for non-tokenized text */
-.code-editor-wrapper textarea,
-.code-editor-wrapper pre {
-  @apply text-[#20252e] dark:text-[#abb2bf];
-  /* cursor white */
-  @apply caret-[#20252e] dark:caret-[#abb2bf];
-}
-
+/* Image justify */
+.image-wrap { @apply my-2; }
+.image-justify-center { @apply text-center; }
+.image-justify-start { @apply text-left; }
+.image-justify-end { @apply text-right; }

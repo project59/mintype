@@ -6,25 +6,19 @@ import WorkspaceTitle from "../layouts/workspaces/WorkspaceTitle.jsx";
 import BackgroundCover from "../layouts/workspaces/BackgroundCover.jsx";
 import FunctionBar from "../components/common/FunctionBar";
 import DeleteWorkspaceModal from "../layouts/workspaces/DeleteWorkspaceModal.jsx";
-import PublishWorkspaceDialog from "../layouts/wiki/PublishWorkspaceDialog";
 import PageHeaderWrapper from "../components/skeletons/PageHeaderWrapper";
 import PageSectionWrapper from "../components/skeletons/PageSectionWrapper";
 import JSZip from "jszip";
-import toast from "react-hot-toast";
 import { SecureContext } from "../layouts/secure-context/SecureContext.jsx";
-import MarkdownExporter from "../components/exporting/MarkdownExporter.jsx";
-import JsonExporter from "../components/exporting/JsonExporter.jsx";
 import { newPageSchema } from "../utils/constants.js";
 
 export default function Workspace() {
     const { workspaceId } = useParams();
     const [workspace, setWorkspace] = useState({});
     const [allPages, setAllPages] = useState([]);
-    const [allPageIds, setAllPageIds] = useState([])
     const [favorites, setFavorites] = useState([]);
     const [recentPages, setRecentPages] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showPublishModal, setShowPublishModal] = useState(false);
     const { masterKey } = useContext(SecureContext);
     const navigate = useNavigate();
 
@@ -48,10 +42,6 @@ export default function Workspace() {
             const nonTrashedfetchedPages = fetchedPages.filter(page => page.deleted === false);
             // remove the workspace from the list
             setAllPages(nonTrashedfetchedPages);
-
-            // Set all page IDs
-            const pageIds = nonTrashedfetchedPages.map(page => page.id);
-            setAllPageIds(pageIds);
 
             // Filter favorites
             const filteredFavorites = nonTrashedfetchedPages.filter(page => page?.isFavorite);
@@ -141,17 +131,11 @@ export default function Workspace() {
         // random number between 1000 and 10000
         const randomNum = Math.floor(Math.random() * (10000 - 1000 + 1)) + 1000;
 
-        dbService.addEntry({
+        await dbService.addEntry({
             id: null, newContent: newPageSchema('whiteboard', randomNum + 1000000), parentId: workspaceId, rootId: workspaceId, masterKey
         });
 
-        fetchWorkspaceData();
-    };
-
-    const handleExportComplete = (result) => {
-        if (result.success) {
-            toast.success(`Successfully exported ${result.count} pages`);
-        }
+        await fetchWorkspaceData();
     };
 
     return (
@@ -243,43 +227,9 @@ export default function Workspace() {
                     </div>
                 </div>
 
-                {import.meta.env.DEV && (
-                    <div className="flex flex-col gap-2 w-full">
-                        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Publish Workspace (coming soon)</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            You can publish your workspace to share it with others.
-                        </p>
-
-                        <div className="flex gap-2 flex-wrap">
-                            <button className="btnPrimary flex gap-1 items-center" onClick={() => setShowPublishModal(true)}>
-                                Publish Workspace
-                            </button>
-                            <PublishWorkspaceDialog
-                                isOpen={showPublishModal}
-                                onClose={() => setShowPublishModal(false)}
-                                workspace={workspace}
-                            />
-                        </div>
-                    </div>
-                )}
-
                 <div className="flex flex-col gap-2 w-full">
                     <h2 className="font-semibold text-gray-900 dark:text-gray-100">Utilities</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Export Workspace
-                    </p>
-                    <div className="flex gap-2 flex-wrap">
-                        <JsonExporter
-                            onExportComplete={handleExportComplete}
-                            workspaceId={workspaceId}
-                        />
-                        <MarkdownExporter
-                            pageIds={allPageIds}
-                            onExportComplete={handleExportComplete}
-                        />
-                    </div>
-
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                         Delete Workspace
                     </p>
                     <button className="btnDestructive w-fit flex items-center gap-1" onClick={() => setShowDeleteModal(true)}>

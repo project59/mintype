@@ -2,6 +2,7 @@ import { useGoogleDrive } from './GoogleDriveContext.jsx';
 import StatusChip from '../components/common/StatusChip.jsx'
 import { useOnlineStatus } from '../layouts/root/OnlineStatusContext.jsx';
 import ProgressBar from './ProgressBar.jsx';
+import { useSync } from './SyncProvider.jsx';
 
 const GoogleDriveAuthorize = () => {
     const {
@@ -15,6 +16,8 @@ const GoogleDriveAuthorize = () => {
         ensureAppFolder,
     } = useGoogleDrive();
 
+
+    const { keyMismatch } = useSync();
 
     const isOnline = useOnlineStatus();
 
@@ -74,7 +77,14 @@ const GoogleDriveAuthorize = () => {
                             <div className="flex flex-col gap-3">
                                 <StatusChip message={'Drive configured'} type={'success'} />
 
-                                {canSync ? (
+                                {canSync && keyMismatch ? (
+                                    <div className="flex flex-col gap-2">
+                                        <StatusChip message={'Sync paused: different encryption key'} type={'warning'} />
+                                        <p className="textRegular max-w-md">
+                                            Your Google Drive notes are encrypted with a different key than this device's, so sync is paused and nothing is uploaded over them. Restore your account's key to sync this device. Choose Returning User when setting up Mintype, or use the key options under Mintype Account above.
+                                        </p>
+                                    </div>
+                                ) : canSync ? (
                                     <div className="flex flex-col gap-2">
                                         <StatusChip message={'Automatic sync enabled'} type={'success'} />
                                         <ProgressBar />

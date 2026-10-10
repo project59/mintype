@@ -3,7 +3,7 @@ import StatusChip from '../components/common/StatusChip.jsx'
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useOnlineStatus } from '../layouts/root/OnlineStatusContext.jsx';
-import { setItem } from '../layouts/secure-context/dbUtils.js';
+import { fetchAccountBundle, storeBundleLocally } from '../lib/keyBundle.js';
 import { useState } from 'react';
 
 const MintypeSetupLogin = ({ onComplete, onReset }) => {
@@ -23,43 +23,18 @@ const MintypeSetupLogin = ({ onComplete, onReset }) => {
     // function to pull users keys from supabase after sign in
     const pullUserKeys = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/get-bundle`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // if the data does not have bundle tokens or they are null, show error
-                if (!data.bundle_tokens || !data.bundle_tokens.salt || !data.bundle_tokens.iv || !data.bundle_tokens.ciphertext) {
-                    toast.error('No keys found for this user. Please set up your keys first.');
-                    setKeyError(true);
-                    return;
-                }
-
-                // set the data to local storage or indexed db as needed
-                await setItem("salt", new Uint8Array(atob(data.bundle_tokens.salt).split('').map(c => c.charCodeAt(0))));
-                await setItem("master_key_enc", {
-                    iv: new Uint8Array(atob(data.bundle_tokens.iv).split('').map(c => c.charCodeAt(0))),
-                    ciphertext: new Uint8Array(atob(data.bundle_tokens.ciphertext).split('').map(c => c.charCodeAt(0)))
-                });
-                await setItem("recovery_key_enc", data.bundle_tokens.recoveryKeyEnc ? {
-                    iv: new Uint8Array(atob(data.bundle_tokens.recoveryKeyEnc.iv).split('').map(c => c.charCodeAt(0))),
-                    ciphertext: new Uint8Array(atob(data.bundle_tokens.recoveryKeyEnc.ciphertext).split('').map(c => c.charCodeAt(0)))
-                } : null);
-                await setItem("recovery_salt", data.bundle_tokens.recoverySalt ? new Uint8Array(atob(data.bundle_tokens.recoverySalt).split('').map(c => c.charCodeAt(0))) : null);
-            } else {
-                console.error('Failed to fetch bundle:', response.statusText);
+            const bundle = await fetchAccountBundle(accessToken);
+            if (!bundle) {
+                toast.error('No keys found for this user. Please set up your keys first.');
+                setKeyError(true);
+                return;
             }
+            await storeBundleLocally(bundle);
             toast.success('Setup Complete!');
-            localStorage.setItem('bundleSaved', 'true'); // we dont need to pull again if it was successful
             onComplete && onComplete();
-
         } catch (error) {
             console.error('Error fetching bundle:', error);
+            toast.error('Could not pull your keys. Please try again.');
         }
     };
 

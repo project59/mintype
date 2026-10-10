@@ -3,11 +3,16 @@ import StatusChip from '../components/common/StatusChip.jsx'
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { useOnlineStatus } from '../layouts/root/OnlineStatusContext.jsx';
-import { getItem } from '../layouts/secure-context/dbUtils.js';
-import { useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { SecureContext } from '../layouts/secure-context/SecureContext.jsx';
+import dbService from '../lib/dbService.js';
+import { buildLocalBundle, fetchAccountBundle, storeBundleLocally, uploadAccountBundle } from '../lib/keyBundle.js';
+import { useSync } from './SyncProvider.jsx';
 
 const GoogleDriveLogin = () => {
     const { user, accessToken, signInWithGoogle, signOut } = useSupabaseAuth();
+    const { handleLockApp, accountKeyStatus, syncAccountKey } = useContext(SecureContext);
+    const { keyMismatch } = useSync();
 
     const handleSignIn = async () => {
         toast.loading('Signing in...');
@@ -29,63 +34,55 @@ const GoogleDriveLogin = () => {
         }
     }
 
-    const saveBundleToSupabase = async () => {
-        console.log('Saving bundle to Supabase...');
-        const salt = await getItem("salt");
-        const { iv, ciphertext } = await getItem("master_key_enc");
-        const recoveryKeyEnc = await getItem("recovery_key_enc");
-        const recoverySalt = await getItem("recovery_salt");
+    const keyConflict = accountKeyStatus === 'conflict';
+    // When the account holds a different key: whether this device has no notes that switching to
+    // the account's key would make unreadable.
+    const [canRestore, setCanRestore] = useState(false);
+    const [confirmReplace, setConfirmReplace] = useState(false);
 
-        if (!salt || !iv || !ciphertext) {
-            console.error('Missing encryption data, cannot save bundle.');
-            return;
-        }
-        const bundle_tokens = {
-            version: 1,
-            iterations: 800000,
-            salt: btoa(String.fromCharCode(...salt)),
-            iv: btoa(String.fromCharCode(...iv)),
-            ciphertext: btoa(String.fromCharCode(...ciphertext)),
-            recoveryKeyEnc: recoveryKeyEnc
-                ? {
-                    iv: btoa(String.fromCharCode(...recoveryKeyEnc.iv)),
-                    ciphertext: btoa(String.fromCharCode(...recoveryKeyEnc.ciphertext))
-                }
-                : null,
-            recoverySalt: recoverySalt
-                ? btoa(String.fromCharCode(...recoverySalt))
-                : null,
-            created: new Date().toISOString(),
-        };
-        console.log('Bundle to be saved:', bundle_tokens);
+    useEffect(() => {
+        if (keyConflict) dbService.getAllEntries().then((entries) => setCanRestore(entries.length === 0));
+    }, [keyConflict]);
 
+    // Sync found Drive data this device's key can't read: check whether the account's key could.
+    useEffect(() => {
+        if (keyMismatch) syncAccountKey(true);
+    }, [keyMismatch, syncAccountKey]);
+
+    const restoreAccountKey = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/set-bundle`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: JSON.stringify({ bundle_tokens })
-            });
-
-            if (!response.ok) {
-                console.error('Failed to save bundle:', response.statusText);
-            } else {
-                console.log('Bundle saved successfully.');
-                localStorage.setItem('bundleSaved', 'true');
+            if ((await dbService.getAllEntries()).length > 0) {
+                setCanRestore(false);
+                return;
             }
+            const bundle = await fetchAccountBundle(accessToken);
+            if (!bundle) {
+                toast.error('No key is saved to this account anymore.');
+                return;
+            }
+            await storeBundleLocally(bundle);
+            await dbService.clearNotes();
+            await dbService.clearSyncQueue();
+            toast.success("Account key restored. Unlock with your account's password.");
+            handleLockApp();
         } catch (error) {
-            console.error('Error saving bundle:', error);
+            console.error('Failed to restore account key:', error);
+            toast.error('Could not restore the account key.');
         }
     };
 
-    useEffect(() => {
-        const bundleSaved = localStorage.getItem('bundleSaved');
-        if (user && accessToken && bundleSaved === 'false') {
-            saveBundleToSupabase();
+    const replaceAccountKey = async () => {
+        try {
+            const refusal = await uploadAccountBundle(accessToken, await buildLocalBundle(), { replace: true });
+            setConfirmReplace(false);
+            await syncAccountKey(true);
+            if (refusal) toast.error('Your account changed meanwhile. Please check the key status again.');
+            else toast.success("This device's key is now saved to your account.");
+        } catch (error) {
+            console.error('Failed to replace account key:', error);
+            toast.error('Could not save the key to your account.');
         }
-    }, [user, accessToken]);
+    };
 
     const isOnline = useOnlineStatus();
 
@@ -119,6 +116,50 @@ const GoogleDriveLogin = () => {
                                 Sign Out
                             </button>
                         </div>
+                        {keyMismatch && accountKeyStatus && !keyConflict && (
+                            <div className="mt-2 flex max-w-md flex-col gap-2">
+                                <StatusChip message={'Google Drive notes use an older key'} type={'warning'} />
+                                <p className="textRegular">
+                                    Your account's saved key is the same as this device's, so it cannot read the notes on Google Drive either. They can only be opened with the key backup file downloaded when that key was set up: reset Mintype, choose Returning User and import that file.
+                                </p>
+                            </div>
+                        )}
+                        {keyConflict && (
+                            <div className="mt-2 flex max-w-md flex-col gap-2">
+                                <StatusChip message={'Your account has a different encryption key'} type={'warning'} />
+                                <p className="textRegular">
+                                    Notes synced from your other devices are encrypted with the key saved to your account. This device was set up with a different key, so it cannot read them, and its key was not saved to your account.
+                                </p>
+                                {canRestore ? (
+                                    <button onClick={restoreAccountKey} className="btnPrimary w-fit">
+                                        Use My Account's Key
+                                    </button>
+                                ) : (
+                                    <p className="textRegular">
+                                        To use your account's key here, export this device's notes, reset Mintype, choose Returning User to pull your keys, then import the notes.
+                                    </p>
+                                )}
+                                {confirmReplace ? (
+                                    <div className="flex flex-col gap-2">
+                                        <p className="textRegular">
+                                            Notes encrypted with your account's current key, on Google Drive and on your other devices, will not be readable by devices set up from now on. Only continue if that key's password, recovery key and key backup are lost.
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setConfirmReplace(false)} className="btnSecondary w-fit">
+                                                Cancel
+                                            </button>
+                                            <button onClick={replaceAccountKey} className="btnDestructive w-fit">
+                                                Replace Account Key
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button onClick={() => setConfirmReplace(true)} className="btnSecondary w-fit">
+                                        Replace Account Key With This Device's
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className='mt-4 flex flex-col gap-2'>

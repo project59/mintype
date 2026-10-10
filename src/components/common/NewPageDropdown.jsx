@@ -4,7 +4,7 @@ import { FileText, PanelsTopLeft, Plus } from "lucide-react";
 import { newPageSchema } from "../../utils/constants.js";
 import { useContext } from "react";
 import { SecureContext } from "../../layouts/secure-context/SecureContext.jsx";
-export default function NewPageDropdown({ rootId, quickNote = false, order }) {
+export default function NewPageDropdown({ rootId, quickNote = false }) {
     const { masterKey } = useContext(SecureContext);
     return (
         <Menu>
@@ -21,7 +21,7 @@ export default function NewPageDropdown({ rootId, quickNote = false, order }) {
                     <button
                         className="dropdownItem"
                         onClick={() => dbService.addEntry({
-                            id: null, newContent: newPageSchema('document', order), parentId: quickNote ? 'quickNote' : rootId, rootId: rootId, masterKey
+                            id: null, newContent: newPageSchema('document'), parentId: quickNote ? 'quickNote' : rootId, rootId: rootId, masterKey
                         })}
                         title="Add new page"
                     >
@@ -33,7 +33,7 @@ export default function NewPageDropdown({ rootId, quickNote = false, order }) {
                     <button
                         className="dropdownItem"
                         onClick={() => dbService.addEntry({
-                            id: null, newContent: newPageSchema('whiteboard', order), parentId: quickNote ? 'quickNote' : rootId, rootId: rootId, masterKey
+                            id: null, newContent: newPageSchema('whiteboard'), parentId: quickNote ? 'quickNote' : rootId, rootId: rootId, masterKey
                         })}
                         title="Add new page"
                     >

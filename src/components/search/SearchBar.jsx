@@ -4,9 +4,11 @@ import { useSearch } from '../../lib/useSearch';
 import dbService from '../../lib/dbService';
 import { clearSearchIndex, initializeSearchIndex } from '../../lib/searchUtils';
 import { Button, Dialog, DialogBackdrop, DialogPanel, Input } from '@headlessui/react';
-import { Check, File, Image, Search, Terminal, Text, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SecureContext } from '../../layouts/secure-context/SecureContext';
+
+const RESULT_TYPE_LABELS = { page_title: 'Title', document: 'Document', whiteboard: 'Whiteboard' };
 
 export function SearchBar({ workspaceId = null, }) {
     const [isInitializing, setIsInitializing] = useState(true);
@@ -65,30 +67,19 @@ export function SearchBar({ workspaceId = null, }) {
 
     const handleResultClick = (result) => {
         navigate(`/workspace/${result.rootId}/${result.pageId}`);
-        //?highlight=${result.elementId || result.blockId}
         close();
         clearSearch();
-    };
-
-    const getTypeIcon = (type) => {
-        switch (type) {
-            case 'page_title': return <File size={12} />;
-            case 'text': return <Text size={12} />;
-            case 'code': return <Terminal size={12} />;
-            case 'todo': return <Check size={12} />;
-            case 'image': return <Image size={12} />;
-            default: return <File size={12} />;
-        }
     };
 
     const highlightQuery = (text, query) => {
         if (!query || !text) return text;
 
-        const regex = new RegExp(`(${query})`, 'gi');
-        const parts = text.split(regex);
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
 
+        // split() with a capture group places the matches at odd indexes.
         return parts.map((part, index) =>
-            regex.test(part) ? (
+            index % 2 === 1 ? (
                 <mark key={index} className="bg-yellow-200 rounded">
                     {part}
                 </mark>
@@ -157,14 +148,11 @@ export function SearchBar({ workspaceId = null, }) {
                                     <div className="mt-2">
                                         {results.map((result, index) => (
                                             <button
-                                                key={`${result.pageId}_${result.elementId}_${result.blockId}_${index}`}
+                                                key={`${result.pageId}_${index}`}
                                                 onClick={() => handleResultClick(result)}
                                                 className="w-full px-3 py-3 rounded-lg text-left hover:bg-gray-300/10 focus:bg-gray-300/10 focus:outline-none"
                                             >
                                                 <div className="flex items-start space-x-2">
-                                                    {/* <span className="text-xs mt-1 flex-shrink-0 text-black">
-                                                        {getTypeIcon(result.type)}
-                                                    </span> */}
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center space-x-2 mb-1">
                                                             <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -174,7 +162,7 @@ export function SearchBar({ workspaceId = null, }) {
                                                                 <span className="text-yellow-500 text-xs">⭐</span>
                                                             )}
                                                             <span className="text-[10px] text-indigo-800 dark:text-indigo-100 capitalize px-1 rounded-full bg-indigo-400/40">
-                                                                {result.type === 'page_title' ? 'Page' : result.type}
+                                                                {RESULT_TYPE_LABELS[result.type] || result.type}
                                                             </span>
                                                         </div>
                                                         <p className="text-sm text-gray-400 line-clamp-2">

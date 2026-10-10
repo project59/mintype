@@ -1,472 +1,180 @@
-import React, { createContext, useContext, useCallback, useRef, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useGoogleDriveAPI } from '../lib/driveService';
 import { SecureContext } from '../layouts/secure-context/SecureContext';
 import { useGoogleDrive } from './GoogleDriveContext';
-import syncService from '../lib/syncService';
+import { runSyncCycle } from '../lib/syncEngine';
+import { reportSyncProgress } from '../lib/syncProgress';
+import { DRIVE_KEY_MISMATCH } from '../lib/driveErrors';
 import dbService from '../lib/dbService';
 
 const SyncContext = createContext(null);
 
-const PULL_FRESHNESS_THRESHOLD = 600000; // 10 minutes
+const SYNC_LOCK = 'mintype-drive-sync';
+const SYNCED_FOLDER_KEY = 'mintypeSyncedFolderId';
+const MAX_RETRY_INTERVAL = 5 * 60 * 1000;
+
+// One sync at a time across tabs; a tab that finds another tab syncing skips this round.
+function withSyncLock(run) {
+    if (!navigator.locks?.request) return run();
+    return navigator.locks.request(SYNC_LOCK, { ifAvailable: true }, (lock) => (lock ? run() : null));
+}
+
+// A different Drive folder (e.g. another Google account) holds none of this device's files, so
+// every page is uploaded to it afresh. The remote cache belongs to one metadata file.
+async function prepareDriveTarget(cache) {
+    const folderId = localStorage.getItem('mintypeFolderId');
+    const syncedFolderId = localStorage.getItem(SYNCED_FOLDER_KEY);
+    if (syncedFolderId && syncedFolderId !== folderId) await dbService.resetSyncState();
+    localStorage.setItem(SYNCED_FOLDER_KEY, folderId);
+
+    const fileId = localStorage.getItem('mintypeFileId');
+    if (cache.fileId !== fileId) {
+        cache.fileId = fileId;
+        cache.version = undefined;
+        cache.meta = undefined;
+    }
+}
 
 export const SyncProvider = ({
     children,
     autoSyncEnabled = true,
-    syncInterval = 600000, // 10 minutes default
-    maxRetriesPerHour = 12, // Safety limit
+    syncInterval = 30000,
 }) => {
-    const { createFileInDrive, updateFileInDrive, deleteFileFromDrive, updateMetaInDrive } = useGoogleDriveAPI();
-    const { canSync, needsSetup, syncRemoteState } = useGoogleDrive();
+    const drive = useGoogleDriveAPI();
+    const { canSync } = useGoogleDrive();
     const { masterKey } = useContext(SecureContext);
-    const syncInProgressRef = useRef(false);
-    const pullInProgressRef = useRef(false);
-    const autoSyncTimerRef = useRef(null);
-    const syncAttemptsRef = useRef([]);
+
+    const driveRef = useRef(drive);
+    driveRef.current = drive;
+    const masterKeyRef = useRef(masterKey);
+    masterKeyRef.current = masterKey;
+    const canSyncRef = useRef(canSync);
+    canSyncRef.current = canSync;
     const mountedRef = useRef(true);
-    const initialPullCompleteRef = useRef(false);
+    const remoteCacheRef = useRef({});
+    const activeSyncRef = useRef(null);
 
-    const [lastSyncTime, setLastSyncTime] = useState(null);
+    const [lastSyncTime, setLastSyncTime] = useState(() => Number(localStorage.getItem('lastSyncTime')) || null);
     const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'error'
-    const [pullStatus, setPullStatus] = useState('idle'); // 'idle' | 'pulling' | 'error'
+    const [pullStatus, setPullStatus] = useState('idle'); // 'idle' | 'pulling'
+    // Sync stays paused while the Drive data needs a different key; nothing is pushed over it.
+    const [keyMismatch, setKeyMismatch] = useState(false);
+    const keyMismatchRef = useRef(false);
 
-    // Rate limiting: Track sync attempts in the last hour
-    const canAttemptSync = useCallback(() => {
-        const now = Date.now();
-        const oneHourAgo = now - 3600000;
-
-        // Clean up old attempts
-        syncAttemptsRef.current = syncAttemptsRef.current.filter(
-            timestamp => timestamp > oneHourAgo
-        );
-
-        // Check if we're under the limit
-        if (syncAttemptsRef.current.length >= maxRetriesPerHour) {
-            console.warn(`Rate limit reached: ${syncAttemptsRef.current.length} syncs in the last hour`);
-            return false;
-        }
-
-        return true;
-    }, [maxRetriesPerHour]);
-
-    // Record sync attempt
-    const recordSyncAttempt = useCallback(() => {
-        syncAttemptsRef.current.push(Date.now());
-    }, []);
-
-    const executeDriveOperation = useCallback(async (operation) => {
-        try {
-            switch (operation.operation) {
-                case 'create':
-                    await syncCreate(operation.fileId);
-                    break;
-                case 'update':
-                    await syncUpdate(operation.fileId);
-                    break;
-                case 'delete':
-                    await syncDelete(operation.fileId, operation.remoteFileId);
-                    break;
-            }
-        } catch (error) {
-            console.error(`Drive operation failed:`, error);
-            throw error;
-        }
-    }, []);
-
-    const syncCreate = useCallback(async (fileId) => {
-        const fileContent = await dbService.getContent(fileId, masterKey);
-        const fileMeta = await dbService.getMeta(fileId);
-        if (!fileContent) {
-            throw new Error(`File content for ${fileId} not found in local DB`);
-        }
-
-        const response = await createFileInDrive(fileMeta, fileContent);
-        if (!response) {
-            throw new Error(`Failed to create file ${fileId} on Drive`);
-        }
-        await dbService.updateMetaField({
-            id: fileId,
-            fieldName: 'remoteFileId',
-            newValue: response.fileId
-        });
-
-        const driveFileId = response.fileId;
-        console.log(`File ${fileId} created on Drive with ID: ${driveFileId}`);
-
-        return response;
-    }, [dbService, masterKey, createFileInDrive]);
-
-    const syncUpdate = useCallback(async (fileId) => {
-        const fileContent = await dbService.getContent(fileId, masterKey);
-        const fileMeta = await dbService.getMeta(fileId);
-        if (!fileContent) {
-            throw new Error(`File content for ${fileId} not found in local DB`);
-        }
-
-        const fileExistsLocally = fileMeta?.remoteFileId;
-
-        if (!fileExistsLocally) {
-            console.log(`File ID for ${fileId} not found in LS, creating new file remotely`);
-            const response = await createFileInDrive(fileMeta, fileContent);
-            if (!response) {
-                throw new Error(`Failed to create file ${fileId} on Drive`);
-            }
-
-            await dbService.updateMetaField({
-                id: fileId,
-                fieldName: 'remoteFileId',
-                newValue: response.fileId
-            });
-
-            return response;
-        } else {
-            console.log(`File ID for ${fileId} found in LS, updating existing file remotely`);
-            const response = await updateFileInDrive(fileMeta, fileContent);
-            if (!response) {
-                throw new Error(`Failed to update file ${fileId} on Drive`);
-            }
-            await dbService.updateMetaField({
-                id: fileId,
-                fieldName: 'remoteFileId',
-                newValue: response.fileId
-            });
-            return response;
-        }
-    }, [dbService, masterKey, createFileInDrive, updateFileInDrive]);
-
-    const syncDelete = useCallback(async (fileId, remoteFileId) => {
-        console.log('File meta for deletion:', remoteFileId);
-
-        if (remoteFileId) {
-            console.log(`File ID for ${fileId} was found in LS, deleting file remotely`);
-            const success = await deleteFileFromDrive(remoteFileId);
-            if (!success) {
-                throw new Error(`Failed to delete file ${fileId} from Drive`);
-            }
-
-            console.log(`File ${fileId} successfully deleted from Drive and localStorage`);
-            return true;
-        } else {
-            console.log(`File ID for ${fileId} was not found in LS, no remote deletion needed`);
-            return true;
-        }
-    }, [deleteFileFromDrive]);
-
-    const pushMeta = useCallback(async () => {
-        const allMetaObjects = await dbService.getAllEntries();
-        const combinedMeta = {
-            name: 'mintype-data',
-            type: 'appdata',
-            entries: [...allMetaObjects]
-        };
-        const response = await updateMetaInDrive(combinedMeta);
-        if (response.fileId) {
-            console.log(`Meta file updated on Drive with ID: ${response.fileId}`);
-            localStorage.setItem('metadataModified', 'false');
-        }
-        return {
-            success: !!response.fileId,
-            response
-        };
-    }, [dbService, updateMetaInDrive]);
-
-    const syncDriveQueue = useCallback(async () => {
-        const operations = await syncService.getAllOperations("syncqueue");
-        if (operations.length === 0) {
-            console.log("No operations to sync with Drive");
-
-            const localMetaChanged = localStorage.getItem('metadataModified') === 'true';
-            if (localMetaChanged) {
-                await pushMeta();
-            }
-            return { operationsProcessed: 0, failed: 0 };
-        }
-
-        const operationPromises = operations.map(async (operation) => {
-            try {
-                await executeDriveOperation(operation);
-                await syncService.deleteOperation(operation.id);
-                return { success: true, operation };
-            } catch (error) {
-                console.error(`Failed to execute operation ${operation.id}:`, error);
-                return { success: false, operation, error: error.message };
-            }
-        });
-
-        const results = await Promise.all(operationPromises);
-        const failedOps = results.filter(result => !result.success);
-
-        if (failedOps.length > 0) {
-            console.warn(`${failedOps.length} operations failed to sync`);
-        }
-
-        console.log(`Drive sync queue processed: ${results.length} total, ${failedOps.length} failed`);
-        await pushMeta();
-
-        return {
-            operationsProcessed: results.length,
-            failed: failedOps.length
-        };
-    }, [syncService, executeDriveOperation, pushMeta]);
-
-    // Check if pull is needed based on freshness threshold
-    const isPullNeeded = useCallback(() => {
-        const lastPullStr = localStorage.getItem('lastPullTime');
-        if (!lastPullStr) {
-            return true; // Never pulled, need to pull
-        }
-        
-        const lastPull = parseInt(lastPullStr, 10);
-        const now = Date.now();
-        const timeSinceLastPull = now - lastPull;
-        
-        return timeSinceLastPull > PULL_FRESHNESS_THRESHOLD;
-    }, []);
-
-    // Pull remote state function
-    const pullRemoteState = useCallback(async (isAutoPull = false) => {
-        // Check if pull is possible
-        if (!canSync && !needsSetup) {
-            console.log('Pull skipped: Not signed in');
-            return null;
-        }
-
-        // Prevent concurrent pulls
-        if (pullInProgressRef.current) {
-            console.log('Pull already in progress, skipping...');
-            return null;
-        }
-
-        // Check if component is still mounted
-        if (!mountedRef.current) {
-            console.log('Pull skipped: Component unmounted');
-            return null;
-        }
-
-        try {
-            pullInProgressRef.current = true;
-            setPullStatus('pulling');
-
-            console.log('Starting remote state pull...');
-            await syncRemoteState();
-
-            // Update last pull time
-            const now = Date.now();
-            localStorage.setItem('lastPullTime', now.toString());
-
-            // Mark pull as complete
-            localStorage.setItem('pullComplete', 'true');
-            initialPullCompleteRef.current = true;
-
-            setPullStatus('idle');
-
-            console.log('Remote state pull completed');
-            return true;
-        } catch (error) {
-            console.error('Error pulling remote state:', error);
-            setPullStatus('error');
-
-            if (!isAutoPull) {
-                toast.error('Pull failed. Will retry automatically.');
-            }
-
-            throw error;
-        } finally {
-            pullInProgressRef.current = false;
-        }
-    }, [canSync, needsSetup, syncRemoteState]);
-
-    // Handle visibility change - pull if needed when window becomes visible
-    const handleVisibilityChange = useCallback(() => {
-        if (document.visibilityState === 'visible' && canSync && mountedRef.current) {
-            console.log('Window became visible, checking pull freshness...');
-            
-            if (isPullNeeded()) {
-                console.log('Pull needed due to staleness, pulling...');
-                pullRemoteState(true).catch(error => {
-                    console.error('Visibility-triggered pull failed:', error);
-                });
-            } else {
-                console.log('Pull not needed, data is fresh');
-            }
-        }
-    }, [canSync, isPullNeeded, pullRemoteState]);
-
-    const syncFiles = useCallback(async (isAutoSync = false) => {
-        // Check if sync is possible
-        if (!canSync && !needsSetup) {
-            console.log('Sync skipped: Not signed in');
-            return null;
-        }
-
-        // Prevent concurrent syncs
-        if (syncInProgressRef.current) {
-            console.log('Sync already in progress, skipping...');
-            return null;
-        }
-
-        // Rate limiting check
-        if (isAutoSync && !canAttemptSync()) {
-            console.warn('Sync skipped: Rate limit reached');
-            setSyncStatus('error');
-            return null;
-        }
-
-        // Check if component is still mounted (for cleanup safety)
-        if (!mountedRef.current) {
-            console.log('Sync skipped: Component unmounted');
-            return null;
-        }
-
-        // CRITICAL: Wait for initial pull to complete before first push
-        if (!initialPullCompleteRef.current && localStorage.getItem('pullComplete') !== 'true') {
-            console.log('Sync skipped: Waiting for initial pull to complete');
-            if (!isAutoSync) {
-                toast.error('Awaiting initial sync from remote...');
-            }
-            return null;
-        }
-
-        try {
-            syncInProgressRef.current = true;
-            setSyncStatus('syncing');
-            recordSyncAttempt();
-
-            const result = await syncDriveQueue();
-
-            // Update last sync time
-            const now = Date.now();
-            setLastSyncTime(now);
-            localStorage.setItem('lastSyncTime', now.toString());
-
-            // Set next sync time
-            const nextSyncTime = now + syncInterval;
-            localStorage.setItem('nextSyncTime', nextSyncTime.toString());
-
-            setSyncStatus('idle');
-
-            if (!isAutoSync && result.operationsProcessed > 0) {
-                toast.success(`Synced ${result.operationsProcessed} operations`);
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Error syncing files:', error);
-            setSyncStatus('error');
-
-            if (!isAutoSync) {
-                toast.error('Sync failed. Will retry automatically.');
-            }
-
-            throw error;
-        } finally {
-            syncInProgressRef.current = false;
-        }
-    }, [canSync, needsSetup, canAttemptSync, recordSyncAttempt, syncDriveQueue, syncInterval]);
-
-    // Schedule next auto-sync
-    const scheduleAutoSync = useCallback(() => {
-        // Clear existing timer
-        if (autoSyncTimerRef.current) {
-            clearTimeout(autoSyncTimerRef.current);
-        }
-
-        if (!autoSyncEnabled || !canSync) {
-            return;
-        }
-
-        // Calculate time until next sync
-        const nextSyncTimeStr = localStorage.getItem('nextSyncTime');
-        const now = Date.now();
-        let timeUntilSync = syncInterval;
-
-        if (nextSyncTimeStr) {
-            const nextSyncTime = parseInt(nextSyncTimeStr, 10);
-            const timeRemaining = nextSyncTime - now;
-
-            // If next sync time is in the future and reasonable, use it
-            if (timeRemaining > 0 && timeRemaining < syncInterval * 2) {
-                timeUntilSync = timeRemaining;
-            }
-        }
-
-        console.log(`Next auto-sync scheduled in ${Math.round(timeUntilSync / 1000)}s`);
-
-        autoSyncTimerRef.current = setTimeout(() => {
-            if (mountedRef.current && autoSyncEnabled) {
-                console.log('Auto-sync triggered');
-                syncFiles(true).then(() => {
-                    // Schedule next sync after this one completes
-                    scheduleAutoSync();
-                });
-            }
-        }, timeUntilSync);
-    }, [autoSyncEnabled, canSync, syncInterval, syncFiles]);
-
-    // Initialize and manage auto-sync and visibility-based pulling
     useEffect(() => {
         mountedRef.current = true;
-
-        // Load last sync time from localStorage
-        const lastSyncStr = localStorage.getItem('lastSyncTime');
-        if (lastSyncStr) {
-            setLastSyncTime(parseInt(lastSyncStr, 10));
-        }
-
-        // Check if initial pull has been completed
-        if (localStorage.getItem('pullComplete') === 'true') {
-            initialPullCompleteRef.current = true;
-        }
-
-        // Set up visibility change listener
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        // Start auto-sync if enabled
-        if (autoSyncEnabled && canSync) {
-            // If initial pull not complete, do it first
-            if (!initialPullCompleteRef.current) {
-                console.log('Performing initial pull...');
-                pullRemoteState(false).then(() => {
-                    // After initial pull, start sync timer
-                    scheduleAutoSync();
-                }).catch(error => {
-                    console.error('Initial pull failed:', error);
-                    // Still schedule timer, it'll handle the retry
-                    scheduleAutoSync();
-                });
-            } else {
-                // Initial pull already done, just check freshness and start sync timer
-                if (isPullNeeded()) {
-                    console.log('Data is stale, performing pull...');
-                    pullRemoteState(true).catch(error => {
-                        console.error('Freshness pull failed:', error);
-                    });
-                }
-                scheduleAutoSync();
-            }
-        }
-
         return () => {
             mountedRef.current = false;
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            if (autoSyncTimerRef.current) {
-                clearTimeout(autoSyncTimerRef.current);
-            }
         };
-    }, [autoSyncEnabled, canSync, pullRemoteState, scheduleAutoSync, handleVisibilityChange, isPullNeeded]);
+    }, []);
+
+    // Resolves to null when sync cannot run now (offline, not set up, or another tab is syncing).
+    const runSync = useCallback((force = false) => {
+        if (!canSyncRef.current || !masterKeyRef.current || !navigator.onLine) return Promise.resolve(null);
+        if (activeSyncRef.current) return activeSyncRef.current;
+
+        const cycleMasterKey = masterKeyRef.current;
+        const isCancelled = () => !mountedRef.current || masterKeyRef.current !== cycleMasterKey;
+        const cycle = withSyncLock(async () => {
+            await prepareDriveTarget(remoteCacheRef.current);
+            return runSyncCycle({
+                drive: driveRef.current,
+                masterKey: cycleMasterKey,
+                cache: remoteCacheRef.current,
+                force,
+                isCancelled,
+                onPhase: (phase) => {
+                    setPullStatus(phase === 'pull' ? 'pulling' : 'idle');
+                    if (phase === 'push') setSyncStatus('syncing');
+                },
+                onProgress: reportSyncProgress,
+            });
+        }).then((result) => {
+            if (result) {
+                keyMismatchRef.current = false;
+                setKeyMismatch(false);
+            }
+            if (result && !result.skipped) {
+                const now = Date.now();
+                localStorage.setItem('lastSyncTime', String(now));
+                setLastSyncTime(now);
+            }
+            setSyncStatus(result?.failed ? 'error' : 'idle');
+            return result;
+        }, (error) => {
+            setSyncStatus('error');
+            if (error.code === DRIVE_KEY_MISMATCH && !keyMismatchRef.current) {
+                keyMismatchRef.current = true;
+                setKeyMismatch(true);
+                toast.error('Sync paused: your Google Drive notes use a different encryption key. See Settings › Accounts and Sync.', { duration: 8000 });
+            }
+            throw error;
+        }).finally(() => {
+            setPullStatus('idle');
+            activeSyncRef.current = null;
+        });
+
+        activeSyncRef.current = cycle;
+        return cycle;
+    }, []);
+
+    // Syncs now and then every `syncInterval`, backing off after failures. Idle cycles cost one
+    // small request, and a failure never stops the loop.
+    useEffect(() => {
+        if (!autoSyncEnabled || !canSync) return;
+
+        let timer = null;
+        let stopped = false;
+        let failures = 0;
+        const tick = async () => {
+            try {
+                await runSync();
+                failures = 0;
+            } catch (error) {
+                failures++;
+                console.error('Auto-sync failed:', error);
+            }
+            if (!stopped) timer = setTimeout(tick, Math.min(syncInterval * 2 ** failures, MAX_RETRY_INTERVAL));
+        };
+        const syncWhenVisible = () => {
+            if (document.visibilityState !== 'visible') return;
+            runSync().catch((error) => console.error('Sync failed:', error));
+        };
+
+        tick();
+        document.addEventListener('visibilitychange', syncWhenVisible);
+        window.addEventListener('online', syncWhenVisible);
+        return () => {
+            stopped = true;
+            clearTimeout(timer);
+            document.removeEventListener('visibilitychange', syncWhenVisible);
+            window.removeEventListener('online', syncWhenVisible);
+        };
+    }, [autoSyncEnabled, canSync, syncInterval, runSync]);
+
+    const syncNow = useCallback(async () => {
+        try {
+            const result = await runSync(true);
+            if (!result) {
+                toast.error(navigator.onLine ? 'Sync is busy or not set up. Try again shortly.' : 'You are offline');
+            } else if (result.failed) {
+                toast.error(`${result.failed} changes could not be synced. They will be retried automatically.`);
+            } else {
+                toast.success('Sync completed');
+            }
+        } catch (error) {
+            console.error('Sync failed:', error);
+            toast.error(`Sync failed: ${error.message}`);
+        }
+    }, [runSync]);
 
     const value = {
-        syncFiles: useCallback(() => syncFiles(false), [syncFiles]),
-        pullRemoteState: useCallback(() => pullRemoteState(false), [pullRemoteState]),
-        syncDriveQueue,
-        pushMeta,
-        syncCreate,
-        syncUpdate,
-        syncDelete,
+        syncNow,
         lastSyncTime,
         syncStatus,
         pullStatus,
-        scheduleAutoSync,
+        keyMismatch,
     };
 
     return (

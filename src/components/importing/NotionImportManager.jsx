@@ -1,38 +1,37 @@
 import { useContext, useState } from 'react';
-import FileUploader from './FileUploader';
+import { DialogTitle } from '@headlessui/react';
 import ImportPreview from './ImportPreview';
 import { analyzeZipStructure, importSelectedPages } from './NotionImporter';
-import dbService from '../../lib/dbService';
+import { isZipFile } from './importUtils';
+import { ImportActions, ImportError, ImportFileInput } from './ImportDialogParts';
 import { SecureContext } from '../../layouts/secure-context/SecureContext';
-import { nanoid } from 'nanoid';
 
-const NotionImportManager = ({ onImportComplete }) => {
+const MAX_ZIP_SIZE = 100 * 1024 * 1024;
+
+const NotionImportManager = ({ onClose, onImportComplete }) => {
+    const [file, setFile] = useState(null);
     const [importState, setImportState] = useState('idle'); // idle, analyzing, previewing, importing
     const [fileStructure, setFileStructure] = useState(null);
-    const [importResults, setImportResults] = useState(null);
+    const [selectedPages, setSelectedPages] = useState(new Set());
     const [error, setError] = useState(null);
     const { masterKey } = useContext(SecureContext);
 
-    const handleFileUpload = async (file) => {
+    const handleFileChange = (selectedFile) => {
+        setFile(null);
+        if (!selectedFile) return setError(null);
+        if (!isZipFile(selectedFile)) return setError('Please select a ZIP file.');
+        if (selectedFile.size > MAX_ZIP_SIZE) return setError('File is too large. Please upload a ZIP smaller than 100MB.');
+        setError(null);
+        setFile(selectedFile);
+    };
+
+    const handleAnalyze = async () => {
         try {
             setImportState('analyzing');
             setError(null);
-
-            // first we create a new workspace for this import
-            const newId = nanoid()
-            await dbService.addRootEntry(
-                {
-                    id: newId,
-                    newContent: {
-                        name: 'New Notion Import',
-                    },
-                    password: masterKey,
-                }
-            )
-
-            const structure = await analyzeZipStructure(file, true, newId);
-            console.log(structure)
+            const structure = await analyzeZipStructure(file);
             setFileStructure(structure);
+            setSelectedPages(new Set(structure.pages.map((page) => page.id)));
             setImportState('previewing');
         } catch (err) {
             setError(err.message);
@@ -40,90 +39,63 @@ const NotionImportManager = ({ onImportComplete }) => {
         }
     };
 
-    const handleImportConfirm = async (selectedPages) => {
+    const handleImport = async () => {
         try {
             setImportState('importing');
-
-            const results = await importSelectedPages(fileStructure, selectedPages, masterKey);
-
-            setImportResults(results);
-            setImportState('idle');
-
-            if (onImportComplete) {
-                onImportComplete(results);
-            }
+            setError(null);
+            const results = await importSelectedPages(fileStructure, Array.from(selectedPages), masterKey);
+            onImportComplete?.(results);
+            onClose();
         } catch (err) {
             setError(err.message);
-            setImportState('idle');
+            setImportState('previewing');
         }
     };
 
-    const handleReset = () => {
-        setImportState('idle');
-        setFileStructure(null);
-        setImportResults(null);
-        setError(null);
-    };
+    const isPreview = importState === 'previewing' || importState === 'importing';
 
     return (
-        <div className="space-y-2">
-            <div className="textTitle flex justify-between items-center">
-                Notion Import
-                <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
-                    beta
-                </div>
-            </div>
-            <p className='textRegular'>A new workspace will be created for this import. You can move your files out from there later if you wish.</p>
+        <>
+            <DialogTitle className="textTitle">Notion Import</DialogTitle>
+            <p className="textRegular">
+                Upload a ZIP exported from Notion. A new workspace will be created for the import.
+            </p>
 
-            {error && (
-                <div className="error-message">
-                    <strong>Error:</strong> {error}
-                    <button onClick={handleReset}>Try Again</button>
-                </div>
-            )}
-
-            <FileUploader onFileUpload={handleFileUpload} />
-
-            {importState === 'analyzing' && (
-                <div className="analyzing-state">
-                    <div className="spinner"></div>
-                    <p>Analyzing file structure...</p>
-                </div>
-            )}
-
-            {importState === 'previewing' && fileStructure && (
+            {isPreview ? (
                 <ImportPreview
                     fileStructure={fileStructure}
-                    onImport={handleImportConfirm}
-                    onCancel={handleReset}
+                    selectedPages={selectedPages}
+                    setSelectedPages={setSelectedPages}
+                />
+            ) : (
+                <>
+                    <p className="infoBox">
+                        In Notion's export settings, select 'HTML', 'Include subpages' and 'Create folders for subpages'.
+                    </p>
+                    <ImportFileInput file={file} onFileChange={handleFileChange} disabled={importState === 'analyzing'} />
+                </>
+            )}
+
+            <ImportError message={error} />
+            {isPreview ? (
+                <ImportActions
+                    onCancel={onClose}
+                    onConfirm={handleImport}
+                    canConfirm={selectedPages.size > 0}
+                    isBusy={importState === 'importing'}
+                    label={`Import ${selectedPages.size} Page${selectedPages.size !== 1 ? 's' : ''}`}
+                />
+            ) : (
+                <ImportActions
+                    onCancel={onClose}
+                    onConfirm={handleAnalyze}
+                    canConfirm={!!file}
+                    isBusy={importState === 'analyzing'}
+                    label="Next"
+                    busyLabel="Reading ZIP..."
                 />
             )}
-
-            {importState === 'importing' && (
-                <div className="importing-state">
-                    <div className="spinner"></div>
-                    <p>Importing pages...</p>
-                </div>
-            )}
-
-            {importResults && (
-                <div className="space-y-2 text-sm text-gray-500">
-                    <h3>Import Complete!</h3>
-                    <p className='textRegular'>Successfully imported {importResults.successCount} pages</p>
-                    {importResults.errors.length > 0 && (
-                        <div className="import-errors">
-                            <p>Errors encountered:</p>
-                            <ul>
-                                {importResults.errors.map((error, index) => (
-                                    <li key={index}>{error}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                    <button className='btnPrimary' onClick={handleReset}>Import Another</button>
-                </div>
-            )}
-        </div>
+        </>
     );
 };
 

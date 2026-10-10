@@ -56,16 +56,22 @@ export async function importKey(raw) {
 }
 
 // Base64 helpers
-function arrayBufferToBase64(buffer) {
+// Pages can be tens of MB, so these use the native codecs where available and otherwise
+// convert in chunks rather than a character at a time.
+const BASE64_CHUNK_SIZE = 0x8000;
+
+export function arrayBufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  if (typeof bytes.toBase64 === "function") return bytes.toBase64();
+  const chunks = [];
+  for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
+    chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + BASE64_CHUNK_SIZE)));
   }
-  return btoa(binary);
+  return btoa(chunks.join(""));
 }
 
-function base64ToArrayBuffer(base64) {
+export function base64ToArrayBuffer(base64) {
+  if (typeof Uint8Array.fromBase64 === "function") return Uint8Array.fromBase64(base64).buffer;
   const binary = atob(base64);
   const len = binary.length;
   const bytes = new Uint8Array(len);

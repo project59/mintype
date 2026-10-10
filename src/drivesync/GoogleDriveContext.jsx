@@ -1,12 +1,16 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import dbService from '../lib/dbService.js';
 import toast from 'react-hot-toast';
 import { useSyncReadiness } from '../lib/useSyncReadiness.js';
 import { useSupabaseAuth } from '../layouts/auth/SupabaseAuthProvider.jsx';
 import { SecureContext } from '../layouts/secure-context/SecureContext.jsx';
 import { TokenService } from '../lib/tokenService.js';
 import { OAuthHandler } from '../lib/oauthHandler.js';
-import { decryptDataWithMasterKey, encryptDataWithMasterKey } from '../layouts/secure-context/secureUtils.js';
+import { encryptDataWithMasterKey } from '../layouts/secure-context/secureUtils.js';
+import { driveErrorStatus, isRetryableDriveError, toDriveError } from '../lib/driveErrors.js';
+
+const MAX_REQUEST_ATTEMPTS = 5;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const retryDelay = (attempt) => Math.min(30000, 1000 * 2 ** (attempt - 1)) + Math.random() * 500;
 
 const GoogleDriveContext = createContext();
 
@@ -19,7 +23,7 @@ export const useGoogleDrive = () => {
 };
 
 export const GoogleDriveProvider = ({ children }) => {
-    const { user, accessToken } = useSupabaseAuth();
+    const { accessToken } = useSupabaseAuth();
     const { masterKey } = useContext(SecureContext);
     const syncReadiness = useSyncReadiness();
 
@@ -29,18 +33,13 @@ export const GoogleDriveProvider = ({ children }) => {
 
     const {
         hasAuth,
-        canSync,
-        gapiInitialized,
         setGapiInitialized,
-        driveAuthorized,
         setDriveAuthorized,
         setDriveConfigured,
     } = syncReadiness;
 
     const API_KEY = import.meta.env.VITE_API_KEY;
     const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
-    const SYNC_INTERVAL = 5 * 60 * 1000;
-    const STORAGE_KEY = 'lastSyncTime';
 
     // Initialize services when master key is available
     useEffect(() => {
@@ -49,14 +48,6 @@ export const GoogleDriveProvider = ({ children }) => {
             setOauthHandler(new OAuthHandler(import.meta.env.VITE_BACKEND_URL));
         }
     }, [masterKey]);
-
-    // Startup Sync
-    // useEffect(() => {
-    //     if (!canSync) return;
-    //     if (import.meta.env.DEV) return;
-    //     console.log('STARTUP PULL')
-    //     syncRemoteState();
-    // }, [canSync]);
 
     // Check if we have valid tokens on mount
     useEffect(() => {
@@ -147,48 +138,41 @@ export const GoogleDriveProvider = ({ children }) => {
     }, [hasAuth, setGapiInitialized, API_KEY]);
 
     // Set access token on gapi client when needed
-    const setGapiToken = useCallback(async () => {
-        if (!tokenService || !window.gapi?.client) return;
-
-        try {
-            const accessToken = await tokenService.getValidAccessToken(apiFetch);
-            window.gapi.client.setToken({ access_token: accessToken });
-            return accessToken;
-        } catch (error) {
-            console.error('Failed to set gapi token:', error);
-            throw error;
+    const setGapiToken = useCallback(async (forceRefresh = false) => {
+        if (!tokenService || !window.gapi?.client) {
+            throw new Error('Google Drive is not ready yet');
         }
+        const accessToken = await tokenService.getValidAccessToken(apiFetch, { forceRefresh });
+        window.gapi.client.setToken({ access_token: accessToken });
+        return accessToken;
     }, [tokenService, apiFetch]);
 
-    // Generic wrapper for Drive API calls
+    // Generic wrapper for Drive API calls: refreshes the token once on 401 and backs off on rate
+    // limits and server errors. Errors are rethrown as Error objects carrying `status`.
     const makeAuthenticatedRequest = useCallback(async (requestFn) => {
-        // if (!canSync) {
-        //     throw new Error("System not ready for sync operations");
-        // }
-
-        try {
-            // Ensure we have a valid token set on gapi
-            await setGapiToken();
-            return await requestFn();
-        } catch (err) {
-            console.error("Drive API error:", err);
-
-            // If it's an auth error, try to refresh and retry once
-            if (err.status === 401 || err.status === 403) {
-                console.log('Auth error, attempting token refresh...');
-                try {
-                    await setGapiToken();
-                    return await requestFn();
-                } catch (retryErr) {
-                    console.error("Retry failed:", retryErr);
+        let forceRefresh = false;
+        for (let attempt = 1; ; attempt++) {
+            await setGapiToken(forceRefresh);
+            try {
+                return await requestFn();
+            } catch (error) {
+                if (driveErrorStatus(error) === 401) {
+                    if (!forceRefresh) {
+                        forceRefresh = true;
+                        continue;
+                    }
                     setDriveAuthorized(false);
                     throw new Error('Authorization expired. Please re-authorize Drive access.');
                 }
+                forceRefresh = false;
+                if (attempt < MAX_REQUEST_ATTEMPTS && isRetryableDriveError(error)) {
+                    await sleep(retryDelay(attempt));
+                    continue;
+                }
+                throw toDriveError(error);
             }
-
-            throw err;
         }
-    }, [canSync, setGapiToken, setDriveAuthorized]);
+    }, [setGapiToken, setDriveAuthorized]);
 
     // Authorize Drive Access
     const authorizeDriveAccess = useCallback(async () => {
@@ -233,10 +217,12 @@ export const GoogleDriveProvider = ({ children }) => {
             const FILE_NAME = "mintype-data.json";
             const FILE_MIME = "application/json";
 
-            // Find or create folder
+            // Find or create folder. The oldest match is used so every device settles on the same
+            // folder if setup ever raced.
             const folderList = await window.gapi.client.drive.files.list({
                 q: `name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
                 fields: "files(id, name)",
+                orderBy: "createdTime",
             });
 
             let folderId;
@@ -260,6 +246,7 @@ export const GoogleDriveProvider = ({ children }) => {
             const fileList = await window.gapi.client.drive.files.list({
                 q: `name='${FILE_NAME}' and '${folderId}' in parents and trashed=false`,
                 fields: "files(id, name)",
+                orderBy: "createdTime",
             });
 
             let fileId;
@@ -273,6 +260,7 @@ export const GoogleDriveProvider = ({ children }) => {
                     name: "mintype-appdata",
                     created: Date.now(),
                     entries: [],
+                    tombstones: {},
                 };
 
                 const { ciphertext, iv } = await encryptDataWithMasterKey(masterKey, JSON.stringify(fileContent));
@@ -303,6 +291,9 @@ export const GoogleDriveProvider = ({ children }) => {
                         body: form,
                     }
                 ).then((r) => r.json());
+                if (!fileResponse.id) {
+                    throw new Error(fileResponse.error?.message || 'Could not create the Mintype meta file');
+                }
 
                 fileId = fileResponse.id;
                 setStatus("Created new meta file");
@@ -315,238 +306,6 @@ export const GoogleDriveProvider = ({ children }) => {
             return folderId;
         });
     }, [makeAuthenticatedRequest, masterKey, tokenService, apiFetch, setDriveConfigured]);
-
-    // Get file content from Drive
-    const getFileContent = useCallback(async (fileId) => {
-        if (!masterKey) {
-            throw new Error('Master key not available');
-        }
-
-        return await makeAuthenticatedRequest(async () => {
-            const response = await window.gapi.client.request({
-                path: `https://www.googleapis.com/drive/v3/files/${fileId}`,
-                method: "GET",
-                params: { alt: "media" },
-            });
-            const file = JSON.parse(response.body);
-            const decoded = await decryptDataWithMasterKey(masterKey, file.iv, file.ciphertext);
-            return decoded;
-        });
-    }, [masterKey, makeAuthenticatedRequest]);
-
-    // List all files from meta file
-    const listAllDriveFiles = useCallback(async () => {
-        const fileId = localStorage.getItem("mintypeFileId");
-        if (!fileId) {
-            throw new Error('Drive not configured');
-        }
-
-        const files = await getFileContent(fileId);
-        return files?.entries || [];
-    }, [getFileContent]);
-
-    // Update local metadata from Drive
-    const updateDriveFileState = useCallback((files) => {
-        files.forEach(async (file) => {
-            const localMeta = await dbService.getMeta(file.id);
-            if (!localMeta) {
-                dbService.updateMetaEntry(file.id, file);
-                return;
-            }
-
-            if (localMeta.lastMetaModified >= file.lastMetaModified) {
-                return;
-            } else {
-                dbService.updateMetaEntry(file.id, file);
-            }
-        });
-    }, []);
-
-    // Pull new files from Drive
-    const pullNewFilesFromDrive = useCallback(async (driveFiles) => {
-        const allFiles = await dbService.getAllEntries();
-        const allFileIds = allFiles.map(file => file.id);
-        const newFiles = driveFiles.filter(file => !allFileIds.includes(file.id));
-
-        if (newFiles.length === 0) {
-            console.log('No new files to download');
-            return { success: true, newCount: 0 };
-        }
-
-        // initialize
-        syncProgress.total = newFiles.length;
-        syncProgress.completed = 0;
-        emitProgress();
-
-        const filePromises = newFiles.map(async (file) => {
-            try {
-                syncProgress.current = file.name;
-                emitProgress();
-
-                const fileContent = await getFileContent(file.remoteFileId);
-                if (fileContent) {
-                    await dbService.addEntry({
-                        id: file.id,
-                        preloadedData: fileContent,
-                        addToQueue: false,
-                        masterKey: masterKey
-                    });
-
-                    syncProgress.completed++;
-                    emitProgress();
-
-                    return { success: true, file: fileContent };
-                } else {
-                    console.warn(`Failed to get content for file: ${file.name}`);
-                    return { success: false, file: file, error: 'No content returned' };
-                }
-            } catch (fileError) {
-                syncProgress.completed++;
-                emitProgress();
-
-                console.error(`Error processing file ${file.name}:`, fileError);
-                return { success: false, file: file, error: fileError.message };
-            }
-        });
-
-        const results = await Promise.all(filePromises);
-        const successfulDownloads = results.filter(result => result.success).length;
-        const failedDownloads = results.filter(result => !result.success);
-
-        if (failedDownloads.length > 0) {
-            console.warn(`${failedDownloads.length} files failed to download`);
-        }
-
-        setStatus(`Successfully downloaded ${successfulDownloads} new files`);
-        return { success: true, newCount: successfulDownloads, failures: failedDownloads.length || 0 };
-    }, [getFileContent]);
-
-    // Pull updated files from Drive
-    const pullUpdatedFilesFromDrive = useCallback(async (driveFiles) => {
-        const allFiles = await dbService.getAllEntries();
-        if (allFiles.length === 0) {
-            console.log('No local files to compare for updates');
-            return { success: true, updatedCount: 0 };
-        }
-
-        const updatedFiles = driveFiles.filter(file => {
-            const localFile = allFiles.find(localFile => localFile.id === file.id);
-            return localFile && localFile.lastModified < file.lastModified;
-        });
-
-        if (updatedFiles.length === 0) {
-            return { success: true, updatedCount: 0 };
-        }
-
-        for (const file of updatedFiles) {
-            console.log('Updating file:', file.id);
-            try {
-                const fileContent = await getFileContent(file.remoteFileId);
-                if (fileContent) {
-                    await dbService.addEntry({
-                        id: file.id,
-                        preloadedData: fileContent,
-                        addToQueue: false,
-                        masterKey: masterKey
-                    });
-                    console.log(`Updated: ${file.name}`);
-                }
-            } catch (error) {
-                console.error(`Error updating ${file.name}:`, error);
-            }
-        }
-
-        return { success: true, updatedCount: updatedFiles.length };
-    }, [getFileContent]);
-
-    // Handle files that exist locally but not remotely
-    const handleOrphanedLocalFiles = useCallback(async (remoteMetaIds) => {
-        const localFiles = await dbService.getAllEntries();
-        const orphanedFiles = localFiles.filter(file => !remoteMetaIds.includes(file.id));
-
-        console.log(`Orphaned local files:`, orphanedFiles);
-
-        for (const file of orphanedFiles) {
-            if (file.remoteFileId) {
-                // File had been pushed, so it was deleted remotely
-                await dbService.deleteEntry({ id: file.id, addToQueue: false });
-                console.log(`Deleted locally: ${file.id} (removed from remote)`);
-            }
-            // Files created locally will be handled by sync-up logic
-        }
-    }, []);
-
-    // Main sync orchestration
-    const syncRemoteState = useCallback(async () => {
-        if (!canSync) {
-            if (!user) {
-                setStatus("Please sign in first");
-            } else if (!masterKey) {
-                setStatus("Master key not available");
-            } else if (!gapiInitialized) {
-                setStatus("Google Drive API not initialized");
-            } else if (!driveAuthorized) {
-                setStatus("Please authorize Drive access first");
-            } else if (!syncReadiness.driveConfigured) {
-                setStatus("Please configure Drive first");
-            }
-            return;
-        }
-
-        console.log("Syncing with Drive...");
-
-        // Reset timer
-        const next = Date.now() + SYNC_INTERVAL;
-        localStorage.setItem(STORAGE_KEY, Date.now().toString());
-        localStorage.setItem('nextSyncTime', next.toString());
-
-        try {
-            setStatus("Starting sync...");
-
-            const driveFiles = await listAllDriveFiles();
-
-            if (!driveFiles) {
-                console.log('Not initialized yet');
-                return;
-            }
-
-            setStatus(`Checking ${driveFiles.length} files...`);
-            console.log('Mintype.json files:', driveFiles);
-
-            // Handle deletions
-            await handleOrphanedLocalFiles(driveFiles.map(file => file.id));
-
-            // Pull updates and new files
-            const pulledUpdated = await pullUpdatedFilesFromDrive(driveFiles);
-            const pulledNew = await pullNewFilesFromDrive(driveFiles);
-
-            // Update metadata if both operations succeeded
-            if (pulledUpdated?.success && pulledNew?.success) {
-                updateDriveFileState(driveFiles);
-            }
-
-            toast.success("Sync completed");
-            dbService.notifyUpdate();
-            localStorage.setItem('pullComplete', 'true');
-            setStatus("Sync completed successfully");
-        } catch (err) {
-            console.error("Sync failed:", err);
-            setStatus(`Sync failed: ${err.message}`);
-            toast.error("Sync failed: " + err.message);
-        }
-    }, [
-        canSync,
-        user,
-        masterKey,
-        gapiInitialized,
-        driveAuthorized,
-        syncReadiness.driveConfigured,
-        listAllDriveFiles,
-        handleOrphanedLocalFiles,
-        pullUpdatedFilesFromDrive,
-        pullNewFilesFromDrive,
-        updateDriveFileState
-    ]);
 
     // Sign out from Drive
     const signOutDrive = useCallback(async () => {
@@ -573,11 +332,8 @@ export const GoogleDriveProvider = ({ children }) => {
 
         // Actions
         authorizeDriveAccess,
-        syncRemoteState,
         signOutDrive,
         ensureAppFolder,
-        listAllDriveFiles,
-        getFileContent,
         makeAuthenticatedRequest,
     };
 
@@ -586,28 +342,4 @@ export const GoogleDriveProvider = ({ children }) => {
             {children}
         </GoogleDriveContext.Provider>
     );
-};
-
-
-const syncProgress = {
-    total: 0,
-    completed: 0,
-    current: null,
-    listeners: new Set()
-};
-
-const emitProgress = () => {
-    syncProgress.listeners.forEach(callback => callback({
-        total: syncProgress.total,
-        completed: syncProgress.completed,
-        current: syncProgress.current,
-        percentage: syncProgress.total ? Math.round((syncProgress.completed / syncProgress.total) * 100) : 0
-    }));
-};
-
-export const useSyncProgress = (callback) => {
-    useEffect(() => {
-        syncProgress.listeners.add(callback);
-        return () => syncProgress.listeners.delete(callback);
-    }, [callback]);
 };

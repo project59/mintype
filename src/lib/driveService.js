@@ -1,181 +1,106 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { useGoogleDrive } from '../drivesync/GoogleDriveContext.jsx';
 import { SecureContext } from '../layouts/secure-context/SecureContext.jsx';
-import { encryptDataWithMasterKey } from '../layouts/secure-context/secureUtils.js';
+import { decryptDataWithMasterKey, encryptDataWithMasterKey } from '../layouts/secure-context/secureUtils.js';
+import { DRIVE_KEY_MISMATCH, isDriveNotFound } from './driveErrors.js';
 
+const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
+const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files';
+const META_FILE_NAME = 'mintype-data.json';
+
+function requireStoredId(key) {
+    const id = localStorage.getItem(key);
+    if (!id) throw new Error('Google Drive is not configured');
+    return id;
+}
+
+// Drive files hold the same `{ iv, ciphertext }` record that IndexedDB stores, so page content is
+// uploaded and downloaded without being decrypted. Every call throws on failure.
 export const useGoogleDriveAPI = () => {
-    const { makeAuthenticatedRequest, setStatus } = useGoogleDrive();
-    const {masterKey} = useContext(SecureContext);
+    const { makeAuthenticatedRequest } = useGoogleDrive();
+    const { masterKey } = useContext(SecureContext);
 
-    const createFileInDrive = async (fileMeta, fileContent) => {
-        return await makeAuthenticatedRequest(async () => {
-            try {
-                const mintypeFolderId = localStorage.getItem('mintypeFolderId')
-                if (!mintypeFolderId) {
-                    setStatus('Failed to access Mintype folder');
-                    return null;
+    return useMemo(() => {
+        const request = (options) => makeAuthenticatedRequest(() => window.gapi.client.request(options));
+
+        const upload = (path, method, metadata, record) => request({
+            path,
+            method,
+            params: { uploadType: 'multipart', fields: 'id,version' },
+            headers: { 'Content-Type': 'multipart/related; boundary="foo_bar_baz"' },
+            body: createMultipartBody(metadata, {
+                mimeType: 'application/json',
+                body: JSON.stringify({ ciphertext: record.ciphertext, iv: record.iv }),
+            }),
+        });
+
+        const downloadFile = async (fileId) => {
+            const response = await request({ path: `${DRIVE_FILES_URL}/${fileId}`, method: 'GET', params: { alt: 'media' } });
+            const { iv, ciphertext } = JSON.parse(response.body);
+            return { iv, ciphertext };
+        };
+
+        return {
+            // Drive increments a file's version on every change, so this cheaply tells whether the
+            // metadata file changed since it was last read.
+            async getMetaVersion() {
+                const response = await request({
+                    path: `${DRIVE_FILES_URL}/${requireStoredId('mintypeFileId')}`,
+                    method: 'GET',
+                    params: { fields: 'version' },
+                });
+                return response.result.version;
+            },
+
+            async readMeta() {
+                const { iv, ciphertext } = await downloadFile(requireStoredId('mintypeFileId'));
+                try {
+                    return await decryptDataWithMasterKey(masterKey, iv, ciphertext);
+                } catch {
+                    throw Object.assign(
+                        new Error("Your Google Drive notes are encrypted with a different key than this device's."),
+                        { code: DRIVE_KEY_MISMATCH },
+                    );
                 }
+            },
 
-                if (!masterKey) return;
-                const { ciphertext, iv } = await encryptDataWithMasterKey(masterKey, JSON.stringify(fileContent));
-                const fileData = JSON.stringify({ ciphertext, iv });
+            async writeMeta(meta) {
+                const record = await encryptDataWithMasterKey(masterKey, JSON.stringify(meta));
+                const response = await upload(
+                    `${DRIVE_UPLOAD_URL}/${requireStoredId('mintypeFileId')}`,
+                    'PATCH',
+                    { name: META_FILE_NAME },
+                    record,
+                );
+                return response.result.version;
+            },
 
-                const fileMetadata = {
-                    name: `${fileMeta.id}.json`, // we will use ID, not name, to avoid duplicates and also because names can change, 
-                    // but the name wont be reflected until the page itself is synced, which might confuse users
-                    parents: [mintypeFolderId],
-                    properties: {
-                        localId: fileMeta.id,
-                        type: fileMeta.type
-                    }
-                };
+            downloadFile,
 
-                const media = {
-                    mimeType: 'application/json',
-                    body: fileData,
-                };
+            async createFile(entry, record) {
+                const response = await upload(DRIVE_UPLOAD_URL, 'POST', {
+                    // Named by ID because names change and the name is only updated on upload.
+                    name: `${entry.id}.json`,
+                    parents: [requireStoredId('mintypeFolderId')],
+                    properties: { localId: entry.id, type: entry.type },
+                }, record);
+                return response.result.id;
+            },
 
-                const fileResponse = await window.gapi.client.request({
-                    path: 'https://www.googleapis.com/upload/drive/v3/files',
-                    method: 'POST',
-                    params: {
-                        uploadType: 'multipart',
-                        fields: 'id, name, properties'
-                    },
-                    headers: {
-                        'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
-                    },
-                    body: createMultipartBody(fileMetadata, media)
-                });
+            async updateFile(fileId, entry, record) {
+                await upload(`${DRIVE_UPLOAD_URL}/${fileId}`, 'PATCH', { name: `${entry.id}.json` }, record);
+            },
 
-                return {
-                    fileId: fileResponse.result.id,
-                    created: fileContent.created
-                };
-            } catch (error) {
-                console.error('Error creating file in Drive:', error);
-                setStatus(`Error creating ${fileMeta.type}: ${error.message}`);
-                return null;
-            }
-        });
-    };
-
-    const updateFileInDrive = async (fileMeta, fileContent) => {
-        if (!fileMeta.remoteFileId) {
-            console.warn('No remoteFileId found for file, cannot update:', fileMeta);
-            setStatus(`Cannot update ${fileMeta.type}: No remoteFileId found.`);
-            return null;
-        }
-        return await makeAuthenticatedRequest(async () => {
-            try {
-                if (!masterKey) return;
-                const { ciphertext, iv } = await encryptDataWithMasterKey(masterKey, JSON.stringify(fileContent));
-                const fileData = JSON.stringify({ ciphertext, iv });
-
-                const fileMetadata = {
-                    name: `${fileMeta.id}.json`,
-                };
-                const media = {
-                    mimeType: 'application/json',
-                    body: fileData,
-                };
-
-                const fileResponse = await window.gapi.client.request({
-                    path: `https://www.googleapis.com/upload/drive/v3/files/${fileMeta.remoteFileId}`,
-                    method: 'PATCH',
-                    params: {
-                        uploadType: 'multipart',
-                        fields: 'id, name, properties'
-                    },
-                    headers: {
-                        'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
-                    },
-                    body: createMultipartBody(fileMetadata, media)
-                });
-
-                return {
-                    fileId: fileResponse.result.id,
-                    updated: new Date().toISOString()
-                };
-            } catch (error) {
-                console.error('Error updating file in Drive:', error);
-                setStatus(`Error updating ${fileMeta.type}: ${error.message}`);
-                return null;
-            }
-        });
-    };
-
-    const updateMetaInDrive = async (fileContent) => {
-        return await makeAuthenticatedRequest(async () => {
-            try {
-                const mintypeFileId = localStorage.getItem('mintypeFileId');
-                if (!masterKey) return;
-                const { ciphertext, iv } = await encryptDataWithMasterKey(masterKey, JSON.stringify(fileContent));
-                const fileData = JSON.stringify({ ciphertext, iv });
-                const fileMetadata = {
-                    name: `mintype-data.json`,
-                };
-
-                const media = {
-                    mimeType: 'application/json',
-                    body: fileData,
-                };
-
-                const fileResponse = await window.gapi.client.request({
-                    path: `https://www.googleapis.com/upload/drive/v3/files/${mintypeFileId}`,
-                    method: 'PATCH',
-                    params: {
-                        uploadType: 'multipart',
-                        fields: 'id, name, properties'
-                    },
-                    headers: {
-                        'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
-                    },
-                    body: createMultipartBody(fileMetadata, media)
-                });
-                return {
-                    fileId: fileResponse.result.id,
-                    updated: new Date().toISOString()
-                };
-            } catch (error) {
-                console.error('Error updating file in Drive:', error);
-                setStatus(`Error updating mintype data file: ${error.message}`);
-                return null;
-            }
-        });
-    };
-
-    const deleteFileFromDrive = async (remoteFileId, moveToTrash = false) => {
-        return await makeAuthenticatedRequest(async () => {
-            try {
-                if (moveToTrash) {
-                    await window.gapi.client.request({
-                        path: `https://www.googleapis.com/drive/v3/files/${remoteFileId}`,
-                        method: 'PATCH',
-                        body: JSON.stringify({ trashed: true })
-                    });
-                } else {
-                    await window.gapi.client.request({
-                        path: `https://www.googleapis.com/drive/v3/files/${remoteFileId}`,
-                        method: 'DELETE'
-                    });
+            // A file that is already gone counts as deleted.
+            async deleteFile(fileId) {
+                try {
+                    await request({ path: `${DRIVE_FILES_URL}/${fileId}`, method: 'DELETE' });
+                } catch (error) {
+                    if (!isDriveNotFound(error)) throw error;
                 }
-                return true;
-            } catch (error) {
-                const action = moveToTrash ? 'moving to trash' : 'deleting';
-                console.error(`Error ${action} file:`, error);
-                setStatus(`Error ${action} file: ${error.message}`);
-                return false;
-            }
-        });
-    };
-
-    return {
-        createFileInDrive,
-        updateFileInDrive,
-        deleteFileFromDrive,
-        updateMetaInDrive
-    };
+            },
+        };
+    }, [makeAuthenticatedRequest, masterKey]);
 };
 
 // Helper function to create multipart body for file upload

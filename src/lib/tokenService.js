@@ -7,6 +7,7 @@ const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000; // 5 minutes buffer
 export class TokenService {
     constructor(masterKey) {
         this.masterKey = masterKey;
+        this.refreshPromise = null;
     }
 
     async storeTokens(tokens) {
@@ -48,9 +49,8 @@ export class TokenService {
         await setItem(TOKEN_STORAGE_KEY, null);
     }
 
-    async isTokenExpired() {
-        const tokens = await this.getTokens();
-        if (!tokens || !tokens.expiry_date) {
+    isTokenExpired(tokens) {
+        if (!tokens?.expiry_date) {
             return true;
         }
 
@@ -58,21 +58,21 @@ export class TokenService {
         return Date.now() >= (tokens.expiry_date - TOKEN_EXPIRY_BUFFER);
     }
 
-    async getValidAccessToken(apiFetch) {
+    // `forceRefresh` is for a token Drive rejected before its expiry. Concurrent requests share
+    // one refresh.
+    async getValidAccessToken(apiFetch, { forceRefresh = false } = {}) {
         const tokens = await this.getTokens();
         if (!tokens) {
             throw new Error('No tokens found. Please authorize Drive access.');
         }
-        
-        const isExpired = await this.isTokenExpired();
-        
-        if (!isExpired) {
+
+        if (!forceRefresh && !this.isTokenExpired(tokens)) {
             return tokens.access_token;
         }
 
-        // Token expired, refresh it
-        console.log('Token expired, refreshing...');
-        return await this.refreshAccessToken(tokens.refresh_token, apiFetch);
+        this.refreshPromise ??= this.refreshAccessToken(tokens.refresh_token, apiFetch)
+            .finally(() => { this.refreshPromise = null; });
+        return this.refreshPromise;
     }
 
     async refreshAccessToken(refreshToken, apiFetch) {

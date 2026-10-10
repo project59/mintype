@@ -206,22 +206,3 @@ pre[class*="language-"] {
 .animate-slideIn:nth-child(5) {
 	animation-delay: 0ms;
 }
-
-.quillCustomToolbar .quill {
-	@apply !flex flex-col
-}
-
-.quillCustomToolbar .ql-toolbar {
-	position: sticky !important;
-	margin-top: 0px !important;
-	margin-bottom: 20px;
-	@apply bg-violet-50 dark:bg-violet-900/20 rounded-md h-fit min-h-8 flex items-center dark:text-white z-10 flex-wrap
-}
-
-.quillCustomToolbar .ql-stroke, .ql-picker-label, .ql-strike {
-	@apply dark:stroke-gray-300 dark:text-gray-300
-}
-
-.quillCustomToolbar .ql-formats {
-	@apply !flex
-}

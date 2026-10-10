@@ -1,64 +1,68 @@
+import { nanoid } from 'nanoid';
 import dbService from './dbService';
 
-let db; // This will hold our initialized database instance
+export const SYNC_QUEUE_STORE = 'syncqueue';
 
-export const initializeDB = async () => {
-    const database = await dbService.initializeDB();
-    db = database;
-};
-
-export const addOperation = async (fileId, operationType, remoteFileId = null) => {
-    if(!db) await initializeDB();
-
-    // Get all operations and filter by fileId
-    const tx = db.transaction("syncqueue", "readwrite");
-    const store = tx.objectStore("syncqueue");
-    const allOps = await store.getAll();
-
-    // Find existing operations for this file
-    const existingOps = allOps.filter(op => op.fileId === fileId);
-
-    // Sort by timestamp
-    existingOps.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Create the new operation
-    const newOp = {
+// Each file has at most one queued operation, keyed by its ID: the newest operation describes
+// everything Drive still needs. `rev` identifies this particular operation so completing an
+// older one never removes its replacement.
+export function putOperation(store, fileId, operation, remoteFileId = null) {
+    return store.put({
         id: fileId,
         fileId,
-        operation: operationType,
-        remoteFileId: remoteFileId, // to be filled when the operation is executed
-        timestamp: Date.now()
-    };
+        operation,
+        remoteFileId,
+        rev: nanoid(),
+        timestamp: Date.now(),
+    });
+}
 
-    // Remove all existing operations for this file
-    for (const op of existingOps) {
-        await store.delete(op.id);
+export async function addOperation(fileId, operation, remoteFileId = null) {
+    const db = await dbService.initializeDB();
+    const tx = db.transaction(SYNC_QUEUE_STORE, 'readwrite');
+    await putOperation(tx.store, fileId, operation, remoteFileId);
+    await tx.done;
+}
+
+// Used by sync repairs, which must not replace an operation the user queued in the meantime.
+export async function addOperationIfAbsent(fileId, operation) {
+    const db = await dbService.initializeDB();
+    const tx = db.transaction(SYNC_QUEUE_STORE, 'readwrite');
+    if (!await tx.store.get(fileId)) await putOperation(tx.store, fileId, operation);
+    await tx.done;
+}
+
+// Removes an executed operation unless it was replaced while it ran (e.g. an edit made during
+// its upload), in which case the replacement stays queued.
+export async function completeOperation(operation) {
+    const db = await dbService.initializeDB();
+    const tx = db.transaction(SYNC_QUEUE_STORE, 'readwrite');
+    const current = await tx.store.get(operation.id);
+    if (current?.rev === operation.rev) {
+        await tx.store.delete(operation.id);
     }
-
-    // Add the new operation to the store
-    await store.add(newOp);
-    console.log(`Added operation ${operationType} for file ${fileId} to sync queue`);
-    dbService.setMetadataModified(); // Update lastMetadataModified timestamp
-
-    await tx.complete;
-};
-
-export async function deleteOperation(operationId) {
-    if(!db) await initializeDB();
-    return db.delete("syncqueue", operationId);
+    await tx.done;
 }
 
 export async function getAllOperations() {
-    if(!db) await initializeDB();
-    return db.getAll("syncqueue");
+    const db = await dbService.initializeDB();
+    return db.getAll(SYNC_QUEUE_STORE);
 }
 
-// Export the service
+// Returns whether metadata changed locally since the last call, and clears the flag. A sync
+// that fails afterwards sets it again.
+export function consumeMetadataModified() {
+    const modified = localStorage.getItem('metadataModified') === 'true';
+    if (modified) localStorage.setItem('metadataModified', 'false');
+    return modified;
+}
+
 const syncService = {
-    initializeDB,
     addOperation,
-    deleteOperation,
-    getAllOperations
+    addOperationIfAbsent,
+    completeOperation,
+    getAllOperations,
+    consumeMetadataModified,
 };
 
 export default syncService;

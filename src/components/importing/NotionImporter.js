@@ -1,264 +1,29 @@
+import JSZip from 'jszip';
 import { nanoid } from 'nanoid';
-import { parseHtmlToBlocks } from './blockextractors/htmlParser';
+import TurndownService from 'turndown';
+import { gfm } from 'turndown-plugin-gfm';
 import dbService from '../../lib/dbService';
-import toast from 'react-hot-toast';
+import { createImportedMeta, dirOf, embedZipImages, emptyImportResult, isZipMetadataPath, rewritePageLinks } from './importUtils';
 
-export async function analyzeZipStructure(zipFile, useCustomBlocks = false, rootId = null) {
-    const JSZip = await import('jszip');
-    let zip = await JSZip.default.loadAsync(zipFile);
+const NOTION_ID_SUFFIX = /\s+[a-f0-9]{32}$/;
 
-    // Check if there's a nested zip file at the root level
-    for (const [path, file] of Object.entries(zip.files)) {
-        if (!file.dir && path.endsWith('.zip') && !path.includes('/')) {
-            toast.error('There is a ZIP file inside the ZIP folder! Please extract it and try again.');
-            return;
-        }
-    }
-
-    const pages = [];
-    const folders = new Map();
-
-    // First pass: identify folders and their associated Notion IDs
-    for (const [path, file] of Object.entries(zip.files)) {
-        if (!file.dir && path.includes('/')) {
-            const pathParts = path.split('/');
-            pathParts.pop(); // Remove the filename
-            let currentPath = '';
-            
-            for (const part of pathParts) {
-                currentPath += part + '/';
-                
-                if (!folders.has(currentPath)) {
-                    // Find the HTML file that matches this folder name
-                    const folderHtmlFile = Object.keys(zip.files).find(filePath => {
-                        const fileName = filePath.split('/').pop();
-                        return fileName && fileName.startsWith(part + ' ') && fileName.endsWith('.html');
-                    });
-                    
-                    if (folderHtmlFile) {
-                        const folderId = extractNotionId(folderHtmlFile);
-                        if (folderId) {
-                            folders.set(currentPath, folderId);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Second pass: process all HTML files
-    for (const [filename, file] of Object.entries(zip.files)) {
-        if (filename.endsWith('.html') && !file.dir) {
-            const content = await file.async('text');
-            const pageData = await processHtmlFile(filename, content, zipFile, useCustomBlocks, rootId, folders);
-            pages.push(pageData);
-        }
-    }
-
-    // Build hierarchy (just structure, no embedding)
-    const hierarchy = buildPageHierarchy(pages, rootId);
-
-    return {
-        pages,
-        rootPages: hierarchy.rootPages,
-        pageMap: hierarchy.pageMap,  // Add this
-        totalPages: pages.length,
-        zipFile,
-        folders: Array.from(folders.entries())
-    };
-}
-
-async function processHtmlFile(filename, content, zipFile, useCustomBlocks, rootId, folders) {
-    const notionId = extractNotionId(filename);
-    const id = notionId || nanoid();
-    const name = extractPageName(filename);
-    const parentId = determineParentId(filename, folders, rootId);
-    const bodyHtml = extractBodyHtml(content);
-
-    // Parse the HTML content into blocks
-    const blocks = await parseHtmlToBlocks(bodyHtml, zipFile, useCustomBlocks, filename, rootId);
-
-    // Create metadata (what goes in the meta store)
-    const metadata = {
-        id,
-        name,
-        type: 'document',
-        parentId,
-        rootId,
-        emoji: null,
-        created: Date.now(),
-        lastModified: Date.now(),
-        lastMetaModified: Date.now(),
-        isFavorite: false,
-        order: 1000000, // needs incrementing
-        deleted: false,
-        sensitive: false,
-        remoteFileId: null,
-        wikiId: null,
-    };
-
-    // Create content (what goes in the content store)
-    const pageContent = {
-        // should ID be here?
-        type: 'document',
-        elements: [{
-            id: nanoid(),
-            type: 'dynamic',
-            x: 5000,
-            y: 5000,
-            width: 600,
-            bgColor: "#ffffff",
-            rotation: 0,
-            zIndex: 0,
-            content: blocks,
-            locked: false
-        }],
-        comments: [],
-        preferences: {
-            panX: 120,
-            panY: 120,
-            zoom: 1,
-            bgColor: { r: 255, g: 255, b: 255 },
-            lockScrollY: false,
-            lockScrollX: false,
-            gridType: "none",
-            gridSize: 20,
-            gridColor: { r: 0, g: 0, b: 0 },
-        },
-    };
-
-    return {
-        id,
-        metadata,
-        content: pageContent,
-        // Keep these for hierarchy building
-        parentId,
-        name
-    };
-}
-
-export function buildPageHierarchy(pages, rootId) {
-    const pageMap = new Map();
-    const rootPages = [];
-
-    // Create a map of all pages by ID
-    pages.forEach(page => {
-        pageMap.set(page.id, {
-            id: page.id,
-            name: page.name,
-            parentId: page.parentId,
-            children: [] // Array of child IDs
-        });
+const initTurndown = () => {
+    const turndownService = new TurndownService({
+        headingStyle: 'atx',
+        codeBlockStyle: 'fenced',
+        fence: '```',
+        emDelimiter: '_',
+        strongDelimiter: '**',
+        linkStyle: 'inlined',
     });
+    turndownService.use(gfm);
+    return turndownService;
+};
 
-    // Build parent-child relationships
-    pages.forEach(page => {
-        if (page.parentId === rootId || !page.parentId) {
-            rootPages.push(page.id);
-        } else {
-            const parent = pageMap.get(page.parentId);
-            if (parent) {
-                parent.children.push(page.id);
-            } else {
-                console.warn(`Parent page not found for ${page.name}, treating as root page`);
-                rootPages.push(page.id);
-            }
-        }
-    });
+const stem = (path) => path.split('/').pop().replace(/\.html$/i, '');
 
-    // Sort function that works with IDs
-    const sortPageIds = (pageIds) => {
-        pageIds.sort((a, b) => {
-            const pageA = pageMap.get(a);
-            const pageB = pageMap.get(b);
-            return pageA.name.localeCompare(pageB.name);
-        });
-        pageIds.forEach(pageId => {
-            const page = pageMap.get(pageId);
-            if (page.children && page.children.length > 0) {
-                sortPageIds(page.children);
-            }
-        });
-    };
-
-    sortPageIds(rootPages);
-    
-    return { 
-        rootPages,
-        pageMap // Return the map so we can access hierarchy info
-    };
-}
-
-export async function importSelectedPages(fileStructure, selectedPageIds, masterKey) {
-    const results = {
-        successCount: 0,
-        errors: [],
-        pageIds: []
-    };
-
-    const selectedPages = fileStructure.pages.filter(page =>
-        selectedPageIds.includes(page.id)
-    );
-
-    for (const page of selectedPages) {
-        try {
-            await savePageToIndexedDB(page, masterKey);
-            results.pageIds.push(page.id);
-            results.successCount++;
-        } catch (error) {
-            results.errors.push(`Failed to import "${page.metadata.name}": ${error.message}`);
-        }
-    }
-
-    return results;
-}
-
-async function savePageToIndexedDB(page, masterKey) {
-    // Save metadata
-    await dbService.addMetaEntry({
-        id: page.id,
-        newContent: page.metadata,
-        masterKey: masterKey,
-        addToQueue: true
-    });
-
-    // Save content
-    await dbService.addContentEntry({
-        id: page.id,
-        newContent: page.content,
-        masterKey: masterKey,
-        addToQueue: true
-    });
-}
-
-// Helper functions
-export function extractNotionId(pathOrFilename) {
-    const matches = pathOrFilename.match(/([a-f0-9]{32})/g);
-    return matches ? matches[matches.length - 1] : null;
-}
-
-export function determineParentId(filepath, folders, rootId) {
-    const pathParts = filepath.split('/');
-    pathParts.pop();
-
-    if (pathParts.length === 0) {
-        return rootId;
-    }
-
-    let currentPath = '';
-    for (let i = pathParts.length - 1; i >= 0; i--) {
-        if (i === pathParts.length - 1) {
-            currentPath = pathParts[i] + '/';
-        } else {
-            currentPath = pathParts.slice(0, i + 1).join('/') + '/' + currentPath;
-        }
-
-        if (folders.has(currentPath)) {
-            return folders.get(currentPath);
-        }
-    }
-
-    return rootId;
+export function extractPageName(path) {
+    return stem(path).replace(NOTION_ID_SUFFIX, '').trim() || 'Untitled';
 }
 
 export function extractBodyHtml(htmlContent) {
@@ -266,8 +31,113 @@ export function extractBodyHtml(htmlContent) {
     return bodyMatch ? bodyMatch[1].trim() : htmlContent.trim();
 }
 
-export function extractPageName(filename) {
-    let name = filename.replace(/.*\//, '').replace(/\.html$/, '');
-    name = name.replace(/\s+[a-f0-9]{32}$/, '');
-    return name.trim() || 'Untitled';
+// With "Create folders for subpages", a page's subpages sit in a folder next to its HTML file,
+// named like the file with or without Notion's ID suffix. Returns the page owning the nearest
+// such folder above `path`.
+const findParentPage = (path, pagesByFolderKey) => {
+    const folders = dirOf(path).split('/').filter(Boolean);
+    for (let depth = folders.length; depth > 0; depth--) {
+        const folder = folders[depth - 1];
+        const parentDir = folders.slice(0, depth - 1).join('/');
+        const parent = pagesByFolderKey.get(`${parentDir}/${folder}`)
+            || pagesByFolderKey.get(`${parentDir}/${folder.replace(NOTION_ID_SUFFIX, '')}`);
+        if (parent) return parent;
+    }
+    return null;
+};
+
+export function buildPageHierarchy(pages) {
+    const pageMap = new Map(pages.map((page) => [page.id, { ...page, children: [] }]));
+    const rootPages = [];
+    for (const page of pages) {
+        const parent = page.parentId && pageMap.get(page.parentId);
+        if (parent) parent.children.push(page.id);
+        else rootPages.push(page.id);
+    }
+
+    const byName = (a, b) => pageMap.get(a).name.localeCompare(pageMap.get(b).name);
+    rootPages.sort(byName);
+    pageMap.forEach((page) => page.children.sort(byName));
+    return { rootPages, pageMap };
+}
+
+// Reads the export's page tree for the preview; page content is converted only on import.
+export async function analyzeZipStructure(zipFile) {
+    const zip = await JSZip.loadAsync(zipFile);
+    const paths = Object.keys(zip.files).filter((path) => !zip.files[path].dir && !isZipMetadataPath(path));
+
+    if (paths.some((path) => /\.zip$/i.test(path) && !path.includes('/'))) {
+        throw new Error('This ZIP contains another ZIP file. Please extract it and upload the inner ZIP instead.');
+    }
+
+    const pages = paths
+        .filter((path) => /\.html$/i.test(path))
+        .map((path) => ({ id: nanoid(), path, name: extractPageName(path) }));
+    if (pages.length === 0) {
+        throw new Error("No Notion pages found. Make sure the export format is 'HTML'.");
+    }
+
+    const pagesByFolderKey = new Map();
+    for (const page of pages) {
+        const parentDir = dirOf(page.path);
+        pagesByFolderKey.set(`${parentDir}/${stem(page.path)}`, page);
+        const shortKey = `${parentDir}/${stem(page.path).replace(NOTION_ID_SUFFIX, '')}`;
+        if (!pagesByFolderKey.has(shortKey)) pagesByFolderKey.set(shortKey, page);
+    }
+    for (const page of pages) {
+        page.parentId = findParentPage(page.path, pagesByFolderKey)?.id ?? null;
+    }
+
+    const { rootPages, pageMap } = buildPageHierarchy(pages);
+    return { zip, pages, rootPages, pageMap, totalPages: pages.length };
+}
+
+// Creates a workspace for the import and adds the selected pages to it. Links between imported
+// pages are pointed at the new pages; a page whose parent was not selected goes to the top.
+export async function importSelectedPages(fileStructure, selectedPageIds, masterKey) {
+    const selected = new Set(selectedPageIds);
+    const pages = fileStructure.pages
+        .filter((page) => selected.has(page.id))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    const pageIdByPath = new Map(pages.map((page) => [page.path, page.id]));
+    const results = { ...emptyImportResult(), total: pages.length };
+
+    const expectedNotesGeneration = dbService.getNotesGeneration();
+    const workspaceId = await dbService.addRootEntry({
+        newContent: { name: 'New Notion Import' },
+        password: masterKey,
+    });
+
+    const turndownService = initTurndown();
+    for (const [index, page] of pages.entries()) {
+        try {
+            const zipFile = fileStructure.zip.file(page.path);
+            const baseDir = dirOf(page.path);
+            let markdown = turndownService.turndown(extractBodyHtml(await zipFile.async('text')));
+            markdown = await embedZipImages(markdown, fileStructure.zip, baseDir);
+            markdown = rewritePageLinks(markdown, baseDir, (target) => pageIdByPath.get(target));
+
+            const meta = createImportedMeta({
+                id: page.id,
+                name: page.name,
+                parentId: selected.has(page.parentId) ? page.parentId : workspaceId,
+                rootId: workspaceId,
+            });
+            const didImport = await dbService.importPage({
+                meta,
+                content: { type: 'document', markdown },
+                masterKey,
+                expectedNotesGeneration,
+            });
+            if (!didImport) throw new Error('Notes were reset during the import.');
+            results.success++;
+        } catch (error) {
+            console.error(`Failed to import ${page.path}:`, error);
+            results.failures.push({ name: page.name, error: error.message });
+        }
+    }
+
+    results.failed = results.failures.length;
+    dbService.notifyUpdate();
+    return results;
 }

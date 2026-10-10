@@ -7,7 +7,7 @@ export default function MoveToWorkspaceDialog({ pageId, isDialogOpen, onClose })
     const [newRootId, setNewRootId] = useState('');
     const [allRoots, setAllRoots] = useState([]);
     const handleMovePage = async () => {
-        await dbService.movePagesToWorkspace(pageId, newRootId, newRootId);
+        await dbService.movePagesToWorkspace(pageId, newRootId);
         onClose();
     }
 

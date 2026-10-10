@@ -23,9 +23,8 @@ export const SupabaseAuthProvider = ({ children }) => {
 
     const signInWithGoogle = async () => {
         const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google',
-             options: { redirectTo: `${import.meta.env.VITE_FRONTEND_URL}/${import.meta.env.VITE_APP === 'community' ? 'discussions' : 'settings/sync'}` } 
+             options: { redirectTo: `${import.meta.env.VITE_FRONTEND_URL}/settings/sync` }
             });
-            localStorage.setItem('bundleSaved', 'false');
         if (error) {
             console.error(error);
         }
@@ -58,8 +57,6 @@ export const SupabaseAuthProvider = ({ children }) => {
                     setUser(null);
                     localStorage.removeItem('mintypeFileId')
                     localStorage.removeItem('mintypeFolderId')
-                    localStorage.setItem('pullComplete', false);
-                    localStorage.setItem('bundleSaved', 'false');
                 }
             }}
         >

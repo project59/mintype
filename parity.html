@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markdown object parity</title>
+    <!-- The app's default font (see index.html), so text wraps as it does in the app. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet">
+  </head>
+  <!-- Dev-only check (npm run dev → /parity.html) that whiteboard Markdown objects look the
+       same static and while edited. Not part of the production build, which only bundles
+       index.html. -->
+  <body style="margin: 0">
+    <div id="root"></div>
+    <script type="module" src="/src/dev/markdown-parity/main.jsx"></script>
+  </body>
+</html>

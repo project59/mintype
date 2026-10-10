@@ -6,12 +6,11 @@ import SettingsSkeleton from "./SettingsSkeleton.jsx";
 import { Link } from "react-router-dom";
 
 export default function ImportPanel() {
-    const handleImportComplete = (results) => {
-        console.log('Import completed:', results);
-        toast.success(`Successfully imported ${results.success} of ${results.total} files`);
-
-        if (results.failures.length > 0) {
-            toast.error('Failed files:', results.failures);
+    const handleImportComplete = ({ success, total, failures }) => {
+        if (success > 0) toast.success(`Imported ${success} of ${total} pages`);
+        if (failures.length > 0) {
+            const names = failures.slice(0, 3).map((failure) => failure.name).join(', ');
+            toast.error(`${failures.length} could not be imported: ${names}${failures.length > 3 ? ', ...' : ''}`);
         }
     };
 
@@ -28,13 +27,13 @@ export default function ImportPanel() {
 
                 <MarkdownImporter onImportComplete={handleImportComplete} />
                 
-                <MintypeImportDialog />
+                <MintypeImportDialog onImportComplete={handleImportComplete} />
             </div>
             </div>
             <div>
                 <h2 className='text-lg font-medium'>How do I export?</h2>
                 <p className='textRegular'>
-                    Your workspaces can be exported from the workspace home page. You can export to Markdown and JSON formats.
+                    Workspaces can be exported to Mintype JSON or Markdown from the <Link className="text-indigo-400 underline" to={'/settings/export'}>Export</Link> settings page.
                 </p>
             </div>
             <div>

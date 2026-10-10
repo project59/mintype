@@ -12,19 +12,14 @@ import SettingsLayout from "../../layouts/settings/SettingsLayout.jsx";
 import ExperimentalSettings from "../../layouts/settings/ExperimentalSettings.jsx";
 import { Toaster } from 'react-hot-toast';
 import PageRedirect from "../../layouts/root/PageRedirect.jsx";
-import PublicProfile from "../../pages/PublicProfile.jsx";
 import { useDynamicThemeColor } from "../../utils/useDynamicThemeColor.js"
 import ImportPanel from "../../layouts/settings/ImportPanel.jsx";
-import ProfileLayout from "../../layouts/profile/ProfileLayout.jsx";
+import ExportPanel from "../../layouts/settings/ExportPanel.jsx";
 import QuickSharePage from "../../pages/QuickSharePage.jsx";
 import DefaultHome from "../../pages/DefaultHome.jsx";
 import SecureSettings from "../../layouts/secure-context/SecureSettings.jsx";
-import StoreHome from "../../pages/StoreHome.jsx";
-import StoreItem from "../../pages/StoreItem.jsx";
-import GetTokens from "../../pages/GetTokens.jsx";
 import AnonRootLayout from "../../layouts/root/AnonRootLayout.jsx";
 import MyProfile from "../../pages/MyProfile.jsx";
-import ComingSoong from "../../pages/ComingSoon.jsx";
 
 const router = createBrowserRouter([
 	{
@@ -91,6 +86,10 @@ const router = createBrowserRouter([
 								element: <ImportPanel />
 							},
 							{
+								path: "export",
+								element: <ExportPanel />
+							},
+							{
 								path: "account",
 								element: <SettingsPanel />
 							},
@@ -108,33 +107,6 @@ const router = createBrowserRouter([
 							}
 						]
 					},
-					{
-						path: "user",
-						element: <ProfileLayout />,
-						children: [
-							{
-								path: ":userId",
-								element: <PublicProfile />
-							}
-						]
-					},
-					{
-						path: "store",
-						children: [
-							{
-								index: true,
-								element: <StoreHome />
-							},
-							{
-								path: ":itemId",
-								element: <StoreItem />
-							}
-						]
-					},
-					{
-						path: "tokens",
-						element: <GetTokens />
-					},
 				]
 			},
 			{
@@ -145,10 +117,6 @@ const router = createBrowserRouter([
 						element: <QuickSharePage />
 					}
 				]
-			},
-			{
-				element: <ComingSoong />,
-				path: "coming-soon"
 			}
 		]
 	}

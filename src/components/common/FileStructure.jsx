@@ -1,6 +1,7 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDrag, useDrop } from 'react-dnd';
+import { useDrag, useDrop, DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import dbService from '../../lib/dbService.js';
 import { ChevronRight, Trash, Ellipsis, Edit, ChevronDownIcon, FileText, PanelsTopLeft, Copy, ArrowLeftRight } from 'lucide-react';
 import { newPageSchema } from '../../utils/constants.js';
@@ -9,15 +10,56 @@ import { useParams } from 'react-router-dom';
 import { useSidebar } from '../../layouts/root/SidebarContext.jsx';
 import NewPageDropdown from './NewPageDropdown.jsx';
 import PageEmojiPicker from '../../layouts/page/PageEmojiPicker.jsx';
-import WorkspaceButton from '../../layouts/wiki/WorkspaceButton.jsx';
+import WorkspaceButton from './WorkspaceButton.jsx';
 import toast from 'react-hot-toast';
 import { getRandomTrashedMessage } from '../../utils/assets.js';
 import { SecureContext } from '../../layouts/secure-context/SecureContext.jsx';
 import MoveToWorkspaceDialog from '../encryption/MoveToWorkspaceDialog.jsx';
+import { compareByOrder, sortByOrder } from '../../lib/pageOrder.js';
 
 // Item Types for drag and drop
 const ItemTypes = {
     ENTRY: 'entry'
+};
+
+// Moves a dragged entry under `parentId`, before `beforeId` or at the end. dbService refuses
+// moves into the entry's own subtree and pages with sub-pages into quick notes.
+const moveDraggedEntry = async (id, parentId, rootId, beforeId = null) => {
+    const moved = await dbService.moveEntry(id, parentId, rootId, beforeId);
+    if (!moved && parentId === 'quickNote') toast.error('Quick note must not contain sub-pages');
+};
+
+const containsPage = (node, id) => node.id === id || (node.children || []).some(child => containsPage(child, id));
+
+// Builds the visible page tree of a workspace. Pages whose parent is missing (not yet synced)
+// or that sit in a parent cycle (two devices moving pages into each other offline) are shown at
+// the top level instead of disappearing.
+const buildPageTree = (entries, rootId) => {
+    const pages = entries.filter(entry => !entry.deleted && entry.id !== rootId && entry.parentId !== 'quickNote');
+    const childrenOf = new Map();
+    for (const page of sortByOrder(pages)) {
+        if (!childrenOf.has(page.parentId)) childrenOf.set(page.parentId, []);
+        childrenOf.get(page.parentId).push(page);
+    }
+
+    const placed = new Set();
+    const build = (parentId) => (childrenOf.get(parentId) || [])
+        .filter(page => !placed.has(page.id))
+        .map(page => {
+            placed.add(page.id);
+            return { ...page, children: build(page.id) };
+        });
+
+    const tree = build(rootId);
+    const pageIds = new Set(pages.map(page => page.id));
+    const unplaced = sortByOrder(pages.filter(page => !placed.has(page.id)));
+    // Orphans first, so a page whose parent is also unplaced still appears under that parent.
+    for (const page of [...unplaced.filter(p => !pageIds.has(p.parentId)), ...unplaced]) {
+        if (placed.has(page.id)) continue;
+        placed.add(page.id);
+        tree.push({ ...page, children: build(page.id) });
+    }
+    return tree.sort(compareByOrder);
 };
 
 // TreeNode component for each entry
@@ -31,19 +73,19 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
     // Handle drag
     const [{ isDragging }, drag] = useDrag({
         type: ItemTypes.ENTRY,
-        item: { id: node.id, type: node.type, parentId: node.parentId },
+        item: { id: node.id },
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
     });
 
-    // Handle drop
+    // Drop onto the row: move into this page, at the end of its sub-pages
     const [{ isOver, canDrop }, drop] = useDrop({
         accept: ItemTypes.ENTRY,
         drop: (item, monitor) => {
-            if (!monitor.didDrop() && item.id !== node.id && !quickNote) {
-                dbService.moveEntry(item.id, node.id, rootId); // default "into folder"
-                return { id: node.id, handled: true };
+            if (!monitor.didDrop()) {
+                moveDraggedEntry(item.id, node.id, rootId);
+                return { handled: true };
             }
         },
         canDrop: (item) => item.id !== node.id && !quickNote,
@@ -53,75 +95,20 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
         }),
     });
 
+    // Drop onto the strip above the row: move next to this page, directly before it
     const [{ isOverAbove }, dropAbove] = useDrop({
         accept: ItemTypes.ENTRY,
         drop: (item, monitor) => {
-            if (!monitor.didDrop() && item.id !== node.id) {
-                handleReorder(item.id, node.parentId, node.id, "before");
+            if (!monitor.didDrop()) {
+                // Top-level rows may be pages rescued from a missing parent, so use where they are shown.
+                const parentId = quickNote ? 'quickNote' : depth === 0 ? rootId : node.parentId;
+                moveDraggedEntry(item.id, parentId, rootId, node.id);
                 return { handled: true };
             }
         },
-        collect: monitor => ({ isOverAbove: monitor.isOver({ shallow: true }) }),
+        canDrop: (item) => item.id !== node.id,
+        collect: monitor => ({ isOverAbove: monitor.isOver({ shallow: true }) && monitor.canDrop() }),
     });
-
-    const [{ isOverBelow }, dropBelow] = useDrop({
-        accept: ItemTypes.ENTRY,
-        drop: (item, monitor) => {
-            if (!monitor.didDrop() && item.id !== node.id) {
-                handleReorder(item.id, node.parentId, node.id, "after");
-                return { handled: true };
-            }
-        },
-        collect: monitor => ({ isOverBelow: monitor.isOver({ shallow: true }) }),
-    });
-
-    const handleReorder = async (draggedId, newParentId, siblingId, position) => {
-        // Get siblings and sort by order
-        let siblings = await dbService.getSiblings(newParentId);
-        siblings = siblings.sort((a, b) => (a.order ?? 1000000) - (b.order ?? 1000000));
-
-        // Find the target sibling
-        const targetIndex = siblings.findIndex(s => s.id === siblingId);
-
-        let newOrder;
-
-        if (position === "before") {
-            // Get the order values around the target position
-            const targetOrder = siblings[targetIndex].order ?? 1000000;
-            const prevOrder = targetIndex > 0 ? (siblings[targetIndex - 1].order ?? 1000000) : 0;
-
-            // Calculate the new order as the midpoint
-            newOrder = (prevOrder + targetOrder) / 2;
-        } else { // "after"
-            const targetOrder = siblings[targetIndex].order ?? 1000000;
-            const nextOrder = targetIndex < siblings.length - 1
-                ? (siblings[targetIndex + 1].order ?? 1000000)
-                : targetOrder + 2000000;
-
-            // Calculate the new order as the midpoint
-            newOrder = (targetOrder + nextOrder) / 2;
-        }
-
-        // Update parentId and rootId
-        await dbService.updateMetaField({
-            id: draggedId,
-            fieldName: "parentId",
-            newValue: newParentId,
-        });
-        await dbService.updateMetaField({
-            id: draggedId,
-            fieldName: "rootId",
-            newValue: rootId,
-        });
-
-        // Update only the dragged item's order
-        await dbService.updateMetaField({
-            id: draggedId,
-            fieldName: "order",
-            newValue: newOrder
-        });
-    };
-    // NOTE: handle quick note reorder.
 
     const handleExpand = (e) => {
         e.stopPropagation();
@@ -131,37 +118,18 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
         }
     };
 
-    const handleAddDocument = async (e) => {
+    const handleAddPage = (e, type) => {
         e.stopPropagation();
-        const siblings = await dbService.getSiblings(node.id);
-
-        // Find the maximum order value
-        const maxOrder = siblings.length > 0
-            ? Math.max(...siblings.map(s => s.order ?? 1000000))
-            : 1000000;
-
         dbService.addEntry({
-            id: null, newContent: newPageSchema('document', maxOrder + 1000000), parentId: node.id, rootId: rootId, masterKey
+            id: null, newContent: newPageSchema(type), parentId: node.id, rootId: rootId, masterKey
         });
-    };
-    const handleAddWhiteboard = async (e) => {
-        e.stopPropagation();
-        const siblings = await dbService.getSiblings(node.id);
-
-        // Find the maximum order value
-        const maxOrder = siblings.length > 0
-            ? Math.max(...siblings.map(s => s.order ?? 1000000))
-            : 1000000;
-
-        dbService.addEntry({
-            id: null, newContent: newPageSchema('whiteboard', maxOrder + 1000000), parentId: node.id, rootId: rootId, masterKey
-        });
+        if (!isExpanded && onCollapse) onCollapse(node.id, true);
     };
 
     const handleDeletePage = (e) => {
         e.stopPropagation();
         dbService.trashEntry({ id: node.id });
-        navigate(`/workspace/${workspaceId}`);
+        if (pageId && containsPage(node, pageId)) navigate(`/workspace/${workspaceId}`);
         toast.success(getRandomTrashedMessage());
     };
 
@@ -173,11 +141,24 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
     const [newTitle, setNewTitle] = useState(node.name);
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false)
 
-    const handleTitleChange = async () => {
-        // Call your database service to update the title
-        await dbService.updateMetaField({ id: node.id, fieldName: 'name', newValue: newTitle });
+    // Guards against saving twice when Enter or Escape is followed by the input's blur.
+    const editingRef = useRef(false);
+
+    const startEditing = () => {
+        editingRef.current = true;
+        setNewTitle(node.name);
+        setIsEditing(true);
+    };
+
+    const finishEditing = async (save) => {
+        if (!editingRef.current) return;
+        editingRef.current = false;
         setIsEditing(false);
-    }
+        const title = newTitle.trim();
+        if (save && title && title !== node.name) {
+            await dbService.updateMetaField({ id: node.id, fieldName: 'name', newValue: title });
+        }
+    };
 
     const handleClick = () => {
         if (pageId === node.id) {
@@ -208,7 +189,7 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                 <div ref={drag} className='flex items-center h-full flex-1 w-[70%]'>
                     <PageEmojiPicker page={node} />
 
-                    <button onClick={handleClick} onDoubleClick={(e) => { e.stopPropagation(); setIsEditing(true) }} className={`truncate h-full w-full flex items-center gap-2 text-sm  ${hasChildren ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <button onClick={handleClick} onDoubleClick={(e) => { e.stopPropagation(); startEditing() }} className={`truncate h-full w-full flex items-center gap-2 text-sm  ${hasChildren ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
                         {isEditing ? (
                             <input
                                 // text all select on focus
@@ -217,11 +198,10 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                                 type="text"
                                 value={newTitle}
                                 onChange={(e) => setNewTitle(e.target.value)}
-                                onBlur={() => handleTitleChange()}
+                                onBlur={() => finishEditing(true)}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === 'Escape') {
-                                        handleTitleChange();
-                                    }
+                                    if (e.key === 'Enter') finishEditing(true);
+                                    if (e.key === 'Escape') finishEditing(false);
                                 }}
                                 className="ml-1 smallInput w-40"
                             />
@@ -258,7 +238,7 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                                 onClick={
                                     (e) => {
                                         e.stopPropagation();
-                                        setIsEditing(true);
+                                        startEditing();
                                     }
                                 }
                                 title="Rename page"
@@ -272,7 +252,7 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                                 <MenuItem>
                                     <button
                                         className="dropdownItem"
-                                        onClick={handleAddDocument}
+                                        onClick={(e) => handleAddPage(e, 'document')}
                                         title="Add Document"
                                     >
                                         <FileText className='text-blue-400' size={14} />
@@ -282,7 +262,7 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                                 <MenuItem>
                                     <button
                                         className="dropdownItem"
-                                        onClick={handleAddWhiteboard}
+                                        onClick={(e) => handleAddPage(e, 'whiteboard')}
                                         title="Add Whiteboard"
                                     >
                                         <PanelsTopLeft className='text-indigo-400' size={14} />
@@ -333,11 +313,6 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
                 <MoveToWorkspaceDialog isDialogOpen={isMoveDialogOpen} pageId={node.id} onClose={() => setIsMoveDialogOpen(false)} />
 
             </div>
-            {/* Drop BELOW indicator */}
-            {/* <div ref={dropBelow} className="h-0.5 relative">
-                {isOverBelow && <div className="absolute inset-0 h-0.5 bg-blue-500 rounded"></div>}
-            </div> */}
-
             {hasChildren && isExpanded && (
                 <div className="ml-3 mt-0.5 flex flex-col">
                     {node.children.map(child => (
@@ -356,13 +331,53 @@ const TreeNode = React.memo(({ node, rootId, depth = 0, onCollapse, quickNote })
     );
 });
 
-// Create a wrapper component that includes DndProvider
+// Drop zone in the Quick Notes header. Defined at module level so re-renders of the sidebar
+// do not remount it and re-register its drop target mid-drag.
+const QuickNotesDropZone = ({ rootId }) => {
+    const [{ isOverQuickNotes }, dropQuickNotes] = useDrop({
+        accept: ItemTypes.ENTRY,
+        drop: (item, monitor) => {
+            if (!monitor.didDrop()) {
+                moveDraggedEntry(item.id, 'quickNote', rootId);
+                return { handled: true };
+            }
+        },
+        collect: monitor => ({
+            isOverQuickNotes: monitor.isOver({ shallow: true }),
+        }),
+    });
+
+    return (
+        <div
+            ref={dropQuickNotes}
+            className={`p-2 flex-1`}
+        >
+            {isOverQuickNotes && (
+                <div className="h-8 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
+                    Move to Quick Notes
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Create a wrapper component that includes DndProvider.
+// The backend root is scoped to this subtree: the HTML5Backend installs
+// window-level capture listeners that preventDefault any drop carrying
+// text/html or text/plain data, which would make ProseMirror ignore all
+// editor drag-and-drop.
 const FileStructureWithDnd = () => {
     const { workspaceId } = useParams();
+    const [dndRoot, setDndRoot] = useState(null);
+
     return (
-        <>
-            <FileStructureContent rootId={workspaceId} />
-        </>
+        <div ref={setDndRoot} className="contents">
+            {dndRoot && (
+                <DndProvider backend={HTML5Backend} options={{ rootElement: dndRoot }}>
+                    <FileStructureContent rootId={workspaceId} />
+                </DndProvider>
+            )}
+        </div>
     );
 };
 
@@ -382,38 +397,35 @@ const FileStructureContent = ({ rootId }) => {
     // Track collapsed state
     const handleCollapse = toggleCollapse;
 
-    const fetchAllData = useMemo(() => {
-        return async () => {
-            try {
-                const [fetchedEntries, quickNotes, fetchedRoots] = await Promise.all([
-                    dbService.getAllEntriesByRoot(rootId),
-                    dbService.getAllQuickNotes(),
-                    dbService.getAllRootMeta()
-                ]);
+    // Broadcasts can arrive faster than fetches finish; only the latest fetch may set state.
+    const fetchIdRef = useRef(0);
+    const fetchAllData = useCallback(async () => {
+        const fetchId = ++fetchIdRef.current;
+        try {
+            const [fetchedEntries, fetchedQuickNotes, fetchedRoots] = await Promise.all([
+                dbService.getAllEntriesByRoot(rootId),
+                dbService.getAllQuickNotes(),
+                dbService.getAllRootMeta()
+            ]);
+            if (fetchId !== fetchIdRef.current) return;
 
-                setEntries(fetchedEntries);
-                setQuickNotes(quickNotes);
-                setWorkspaces(fetchedRoots);
-
-                const filteredFavorites = fetchedEntries.filter(favorite => favorite?.isFavorite);
-                setFavorites(filteredFavorites);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        };
-    }, [rootId]);
+            setEntries(fetchedEntries);
+            setQuickNotes(sortByOrder(fetchedQuickNotes.filter(note => !note.deleted)));
+            setWorkspaces(fetchedRoots
+                .filter(root => !root.deleted)
+                .sort((a, b) => (a.created ?? 0) - (b.created ?? 0) || (a.id < b.id ? -1 : 1)));
+            setFavorites(sortByOrder(fetchedEntries.filter(entry => entry.isFavorite && !entry.deleted)));
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }, [rootId, setEntries, setQuickNotes, setWorkspaces, setFavorites]);
 
     // Broadcast channel listener for real-time updates
     useEffect(() => {
         const broadcastChannel = new BroadcastChannel('db-updates');
-        const handleUpdate = () => {
-            console.log('Received update from broadcast channel');
-            fetchAllData(); // Use the combined function
-        };
-
-        broadcastChannel.addEventListener('message', handleUpdate);
+        broadcastChannel.addEventListener('message', fetchAllData);
         return () => {
-            broadcastChannel.removeEventListener('message', handleUpdate);
+            broadcastChannel.removeEventListener('message', fetchAllData);
             broadcastChannel.close();
         };
     }, [fetchAllData]);
@@ -423,27 +435,14 @@ const FileStructureContent = ({ rootId }) => {
         fetchAllData();
     }, [fetchAllData]);
 
-    // Build tree hierarchy
-    const hierarchy = useMemo(() => {
-        if (!entries.length) return [];
-        const buildTree = (parentId) => {
-            return entries
-                .filter(entry => entry.parentId === parentId)
-                .sort((a, b) => (a.order || 0) - (b.order || 0))
-                .map(entry => ({
-                    ...entry,
-                    children: buildTree(entry.id),
-                }));
-        };
-        return buildTree(rootId);
-    }, [entries, rootId]);
+    const hierarchy = useMemo(() => buildPageTree(entries, rootId), [entries, rootId]);
 
     // Drop area for top level (direct children of root)
     const [{ isOver }, drop] = useDrop({
         accept: ItemTypes.ENTRY,
         drop: (item, monitor) => {
             if (!monitor.didDrop()) {
-                dbService.moveEntry(item.id, rootId, rootId);
+                moveDraggedEntry(item.id, rootId, rootId);
                 return { handled: true };
             }
         },
@@ -451,48 +450,6 @@ const FileStructureContent = ({ rootId }) => {
             isOver: monitor.isOver(),
         }),
     });
-
-    const checkSiblings = async (id) => {
-        return await dbService.hasChild(id);
-    }
-
-    // Add this new drop zone component for Quick Notes
-    const QuickNotesDropZone = () => {
-        const [{ isOverQuickNotes }, dropQuickNotes] = useDrop({
-            accept: ItemTypes.ENTRY,
-            drop: async (item, monitor) => {
-                if (!monitor.didDrop()) {
-                    // Now we can await the async function
-                    const hasChildren = await checkSiblings(item.id);
-
-                    if (hasChildren) {
-                        toast.error(`Quick note must not contain sub-pages`);
-                        return { handled: true };
-                    }
-
-                    await dbService.moveEntry(item.id, 'quickNote', rootId);
-                    return { handled: true };
-                }
-            },
-            collect: monitor => ({
-                isOverQuickNotes: monitor.isOver({ shallow: true }),
-            }),
-        });
-
-        return (
-            <div
-                ref={dropQuickNotes}
-                className={`p-2 flex-1`}
-            >
-                {isOverQuickNotes && (
-                    <div className="h-8 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
-                        Move to Quick Notes
-                    </div>
-                )}
-            </div>
-        );
-    };
-
 
     return (
         <div className='flex flex-col gap-1 w-full'>
@@ -556,9 +513,9 @@ const FileStructureContent = ({ rootId }) => {
                 <div className='flex p-2 pr-1 justify-between items-center'>
                     <div className='flex gap-2 items-center w-full'>
                         <span className="textH2">Quick Notes</span>
-                        <QuickNotesDropZone />
+                        <QuickNotesDropZone rootId={rootId} />
                     </div>
-                    <NewPageDropdown rootId={rootId} order={hierarchy.length > 0 ? hierarchy[hierarchy.length - 1].order + 1000000 : 1000000} quickNote={true} />
+                    <NewPageDropdown rootId={rootId} quickNote={true} />
                 </div>
 
 
@@ -592,25 +549,18 @@ const FileStructureContent = ({ rootId }) => {
                             )}
                         </div>
                     </div>
-                    <NewPageDropdown rootId={rootId} order={hierarchy.length > 0 ? hierarchy[hierarchy.length - 1].order + 1000000 : 1000000} />
+                    <NewPageDropdown rootId={rootId} />
                 </div>
 
-                {hierarchy.length > 0 && (
-                    <>
-                        {/* we want only nodes where deleted = false */}
-                        {hierarchy.map(node => (
-                            node.deleted === false && (
-                                <TreeNode
-                                    key={node.id}
-                                    node={node}
-                                    rootId={rootId}
-                                    onCollapse={handleCollapse}
-                                    quickNote={false}
-                                />
-                            )
-                        ))}
-                    </>
-                )}
+                {hierarchy.map(node => (
+                    <TreeNode
+                        key={node.id}
+                        node={node}
+                        rootId={rootId}
+                        onCollapse={handleCollapse}
+                        quickNote={false}
+                    />
+                ))}
             </div>
         </div >
     );

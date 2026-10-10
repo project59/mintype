@@ -1,10 +1,7 @@
 import { ChevronDown, ChevronRight, FileText, Folder } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const ImportPreview = ({ fileStructure, onImport, onCancel }) => {
-    const [selectedPages, setSelectedPages] = useState(
-        new Set(fileStructure.pages.map(page => page.id))
-    );
+const ImportPreview = ({ fileStructure, selectedPages, setSelectedPages }) => {
     const [expandedFolders, setExpandedFolders] = useState(new Set());
 
     const handlePageToggle = (pageId) => {
@@ -26,7 +23,7 @@ const ImportPreview = ({ fileStructure, onImport, onCancel }) => {
 
             const ensureAncestorsSelected = (id) => {
                 const page = fileStructure.pages.find(p => p.id === id);
-                if (page?.parentId && page.parentId !== fileStructure.rootPages[0]) {
+                if (page?.parentId) {
                     newSelectedPages.add(page.parentId);
                     ensureAncestorsSelected(page.parentId);
                 }
@@ -104,7 +101,6 @@ const ImportPreview = ({ fileStructure, onImport, onCancel }) => {
         setExpandedFolders(getAllParentIds(fileStructure.rootPages));
     }, [fileStructure]);
 
-    // Rest of the component remains the same...
     const handleSelectAll = () => {
         setSelectedPages(new Set(fileStructure.pages.map(page => page.id)));
     };
@@ -114,11 +110,8 @@ const ImportPreview = ({ fileStructure, onImport, onCancel }) => {
     };
 
     return (
-        <div className="space-y-2 pt-4">
-            <div className="">
-                <h3 className="textTitle">Preview Import</h3>
-                <p className="textRegular">Found {fileStructure.totalPages} pages. Select which ones to import:</p>
-            </div>
+        <div className="space-y-2">
+            <p className="textRegular">Found {fileStructure.totalPages} pages. Select which ones to import:</p>
 
             <div className="flex gap-2">
                 <button className="btnChip" onClick={handleSelectAll}>Select All</button>
@@ -127,19 +120,6 @@ const ImportPreview = ({ fileStructure, onImport, onCancel }) => {
 
             <div className="max-h-60 overflow-y-auto">
                 {renderPageTree(fileStructure.rootPages, fileStructure.pageMap)}
-            </div>
-
-            <div className="flex flex-col gap-1">
-                <div className="flex gap-2">
-                    <button className="btnSecondary" onClick={onCancel}>Cancel</button>
-                    <button
-                        onClick={() => onImport(Array.from(selectedPages))}
-                        disabled={selectedPages.size === 0}
-                        className="btnPrimary"
-                    >
-                        Import {selectedPages.size} Page{selectedPages.size !== 1 ? 's' : ''}
-                    </button>
-                </div>
             </div>
         </div>
     );

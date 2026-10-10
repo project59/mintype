@@ -1,5 +1,5 @@
 // context/SecureContext.jsx
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { getItem, setItem, clearStore } from "./dbUtils";
 import {
   deriveKEK,
@@ -7,13 +7,17 @@ import {
   encryptWithKey,
   decryptWithKey,
   exportKey,
-  importKey,
 } from "./secureUtils";
 import PasswordPrompt from "./PasswordPrompt";
 import SetupDialog from "./SetupDialog";
 import toast from "react-hot-toast";
 import RecoveryKeyDialog from "./RecoveryKeyDialog";
+import { hasLocalSetup, unwrapMasterKey } from "./localKey";
 import dbService from "../../lib/dbService";
+import { buildLocalBundle, reconcileAccountKey, rememberKeyCheck, setWrappedAt } from "../../lib/keyBundle";
+import { useSupabaseAuth } from "../auth/SupabaseAuthProvider.jsx";
+
+const ACCOUNT_KEY_CHECK_INTERVAL = 5 * 60 * 1000;
 
 export const SecureContext = createContext();
 
@@ -24,14 +28,16 @@ export default function SecureProvider({ children }) {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [recKey, setRecKey] = useState(null);
+  const { accessToken } = useSupabaseAuth();
+  // Result of the last comparison with the account's copy of the key (see reconcileAccountKey).
+  const [accountKeyStatus, setAccountKeyStatus] = useState(null);
+  const accountKeySyncRef = useRef({ running: null, lastRun: 0 });
 
   // -- check on load --
   useEffect(() => {
     (async () => {
-      const mkEnc = await getItem("master_key_enc");
-      const salt = await getItem("salt");
-      if (!mkEnc || !salt) setSetupNeeded(true);
-      else setShowPasswordPrompt(true);
+      if (await hasLocalSetup()) setShowPasswordPrompt(true);
+      else setSetupNeeded(true);
     })();
   }, []);
 
@@ -46,7 +52,7 @@ export default function SecureProvider({ children }) {
   const handleSetup = async (password, isImport = false, importData = null) => {
     if (isImport && importData) {
       // Validate the import data structure
-      if (!importData.salt || !importData.iv || !importData.ciphertext) {
+      if (!importData.salt || !importData.iv || !importData.ciphertext || !importData.wrappedAt) {
         toast.error("Invalid backup file format");
         return;
       }
@@ -65,6 +71,7 @@ export default function SecureProvider({ children }) {
           });
           await setItem("recovery_salt", Uint8Array.from(atob(recoverySalt), (c) => c.charCodeAt(0)));
         }
+        await setWrappedAt(importData.wrappedAt);
         toast.success("Keys imported successfully. Please enter your password to unlock.");
         setSetupNeeded(false);
         setShowPasswordPrompt(true);
@@ -104,6 +111,8 @@ export default function SecureProvider({ children }) {
     await setItem("salt", salt);
     await setItem("recovery_key_enc", { iv: rIV, ciphertext: rCiphertext });
     await setItem("recovery_salt", recoverySalt);
+    await rememberKeyCheck(rawMK);
+    await setWrappedAt(Date.now());
 
     setMasterKey(masterKey);
     setReady(true);
@@ -114,19 +123,18 @@ export default function SecureProvider({ children }) {
   };
 
   const handleLogin = async (passwordOrRecovery, isRecovery = false) => {
-    const salt = isRecovery ? await getItem("recovery_salt") : await getItem("salt");
-    const encBlob = isRecovery
-      ? await getItem("recovery_key_enc")
-      : await getItem("master_key_enc");
-    if (!encBlob) return alert("No matching encrypted data found");
-
-    const { iv, ciphertext } = encBlob;
-    const kek = await deriveKEK(passwordOrRecovery, salt);
+    let unwrapped;
+    try {
+      unwrapped = await unwrapMasterKey(passwordOrRecovery, isRecovery);
+    } catch {
+      toast.error("Failed to unlock");
+      return;
+    }
+    if (!unwrapped) return alert("No matching encrypted data found");
 
     try {
-      const decrypted = await decryptWithKey(kek, iv, ciphertext);
-      const rawMK = Uint8Array.from(atob(decrypted), (c) => c.charCodeAt(0));
-      const masterKey = await importKey(rawMK);
+      const { masterKey, rawMK } = unwrapped;
+      await rememberKeyCheck(rawMK);
 
       setMasterKey(masterKey);
       setReady(true);
@@ -186,8 +194,12 @@ export default function SecureProvider({ children }) {
 
       await setItem("master_key_enc", { iv: newIV, ciphertext: newCiphertext });
       await setItem("salt", newSalt);
+      await setWrappedAt(Date.now());
 
       toast.success("Password changed successfully!");
+      // Save the new copy to the account now so new and existing devices use the new password.
+      // If this fails (e.g. offline), the next account key check uploads it.
+      syncAccountKey(true);
     } catch (error) {
       console.error("Error changing password:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -196,28 +208,11 @@ export default function SecureProvider({ children }) {
 
 
   const handleExport = async () => {
-    const salt = await getItem("salt");
-    const { iv, ciphertext } = await getItem("master_key_enc");
-    const recoveryKeyEnc = await getItem("recovery_key_enc");
-    const recoverySalt = await getItem("recovery_salt");
-
-    const data = {
-      version: 1,
-      iterations: 800000,
-      salt: btoa(String.fromCharCode(...salt)),
-      iv: btoa(String.fromCharCode(...iv)),
-      ciphertext: btoa(String.fromCharCode(...ciphertext)),
-      recoveryKeyEnc: recoveryKeyEnc
-        ? {
-          iv: btoa(String.fromCharCode(...recoveryKeyEnc.iv)),
-          ciphertext: btoa(String.fromCharCode(...recoveryKeyEnc.ciphertext))
-        }
-        : null,
-      recoverySalt: recoverySalt
-        ? btoa(String.fromCharCode(...recoverySalt))
-        : null,
-      created: new Date().toISOString(),
-    };
+    const data = await buildLocalBundle();
+    if (!data) {
+      toast.error("No encryption keys found on this device.");
+      return;
+    }
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -244,6 +239,46 @@ export default function SecureProvider({ children }) {
 
   }
 
+  // Keeps this device's copy of the key and the account's copy in line while signed in: uploads a
+  // newer local copy, and adopts a newer account copy so a password changed on another device
+  // applies here at the next unlock. Runs on unlock and when the app is shown, at most every few
+  // minutes unless forced.
+  const syncAccountKey = useCallback(async (force = false) => {
+    const state = accountKeySyncRef.current;
+    if (!accessToken || !masterKey) return null;
+    // A forced check must see the latest local copy, so it runs again after one in progress.
+    if (state.running) return force ? state.running.then(() => syncAccountKey(true)) : state.running;
+    if (!force && Date.now() - state.lastRun < ACCOUNT_KEY_CHECK_INTERVAL) return null;
+
+    state.running = reconcileAccountKey(accessToken)
+      .then((result) => {
+        state.lastRun = Date.now();
+        setAccountKeyStatus(result);
+        if (result === "adopted") {
+          toast("Your password was changed on another device. Use the new password next time you unlock.", { duration: 8000 });
+        }
+        return result;
+      })
+      .catch((error) => {
+        console.error("Account key check failed:", error);
+        return null;
+      })
+      .finally(() => {
+        state.running = null;
+      });
+    return state.running;
+  }, [accessToken, masterKey]);
+
+  useEffect(() => {
+    if (!accessToken || !masterKey) return;
+    syncAccountKey(true);
+    const checkWhenVisible = () => {
+      if (document.visibilityState === "visible") syncAccountKey();
+    };
+    document.addEventListener("visibilitychange", checkWhenVisible);
+    return () => document.removeEventListener("visibilitychange", checkWhenVisible);
+  }, [accessToken, masterKey, syncAccountKey]);
+
   const value = {
     ready,
     masterKey,
@@ -253,6 +288,8 @@ export default function SecureProvider({ children }) {
     handleChangePassword,
     handleReset,
     handleExport,
+    accountKeyStatus,
+    syncAccountKey,
   };
 
   if (setupNeeded) return <SetupDialog onSetup={handleSetup} />;

@@ -13,7 +13,7 @@ export default function DriveSyncPopup() {
 
     const [syncQueueLength, setSyncQueueLength] = useState(0);
     const [isOpen, setIsOpen] = useState(false)
-    const { syncFiles, syncStatus, pullStatus, pullRemoteState } = useSync();
+    const { syncNow, syncStatus, pullStatus, keyMismatch } = useSync();
 
     const getSyncQueueLength = async () => {
         const queue = await syncService.getAllOperations();
@@ -81,7 +81,14 @@ export default function DriveSyncPopup() {
                                 </div>
                             </div>
                         </div>
-                        {canSync ? (
+                        {canSync && keyMismatch ? (
+                            <div className="flex flex-col">
+                                <p className="textLabel">Status</p>
+                                <div className="textRegular text-red-500">
+                                    Your Google Drive notes are encrypted with a different key than this device's, so sync is paused and nothing is uploaded over them. Restore your account's key to sync this device.
+                                </div>
+                            </div>
+                        ) : canSync ? (
                             <div className="flex flex-col">
                                 <p className="textLabel">Status</p>
                                 <div className="textRegular flex flex-col capitalize">
@@ -106,11 +113,8 @@ export default function DriveSyncPopup() {
                             <Link to="/settings/sync" className="btnSecondary">
                                 Settings
                             </Link>
-                            <button title="Pull Files" disabled={!canSync} onClick={pullRemoteState} className="btnPrimary w-full flex items-center justify-center gap-2">
-                                Force Pull
-                            </button>
-                            <button title="Pull Files" disabled={!canSync} onClick={syncFiles} className="btnPrimary w-full flex items-center justify-center gap-2">
-                                Force Push
+                            <button title="Sync with Google Drive" disabled={!canSync} onClick={syncNow} className="btnPrimary w-full flex items-center justify-center gap-2">
+                                Sync Now
                             </button>
                         </div>
                     </DialogPanel>

@@ -1,111 +1,195 @@
-# Mintype - A free, zero-knowledge note taking app
+# Mintype: a free, zero-knowledge note-taking app
 
-![intro](images/intro.png)
+<p align="center">
+  <img src="images/hero.png" alt="Mintype homepage" />
+</p>
 
-## Version 2.0 will be out soon!!! Stay tuned - ETA mid October
-Version 2.0 vastly improves the Mintype experience, after strong considerations on the current implementation, I have streamlined the app and improved many faults existing in v1.0:
-- Much more versatile and dynamic whiteboard, with infinite canvas, more/better shapes, layering, connectors, grouping, exporting, drawing and board controls.
-- Improved markdown based editing experience, with custom markdown syntax to accommodate custom components. Documents are now more 'whole' and not separated into independent blocks.
-- New quick shortcut syntax to create markdown elements, such as sections and to-do items (@section[Introduction], @do[todo title - to-do description])
-- New google maps block: plan trips and mark locations with the new Google Maps embed view 
+<p align="center">
+  <a href="https://mintype.app">Open Mintype</a> ·
+  <a href="https://github.com/project59/mintype/discussions">Discussions</a> ·
+  <a href="https://github.com/orgs/project59/projects/1">Roadmap</a> ·
+  <a href="https://discord.gg/JyJH5seZqj">Discord</a> ·
+  <a href="https://github.com/sponsors/project59">Sponsor ❤️</a>
+</p>
 
-## Available on all devices - Open Beta out now 🍏
-This is a web-based app, so it is available on all devices that have browser support. I recommend Chrome and Firefox for best compatibility.
+Mintype is a notes app for documents and whiteboards. Everything is encrypted on your device before it is saved or synced, so only you can read your notes. It works offline, runs in any modern browser, and syncs free through your own Google Drive.
 
-PWA support is built in to provide a more native feel, especially on **Android** and **iOS** devices. 
-<!-- See installation instructions [here](https://docs.mintype.app/installation). -->
+## What's new in 2.0 🎉
 
+Version 2.0 is a ground-up rework of the editor and whiteboard:
+
+- **A brand-new whiteboard** with an infinite canvas, sticky notes, shapes, drawing, connectors, grouping, images, and export.
+- **A smoother, Markdown-based editor.** Documents are now one continuous page instead of separate blocks, and they export cleanly to Markdown.
+- **New blocks:** sections, columns, tables, callouts, to-do lists, code, Google Maps, and YouTube. Type `/` to insert any of them.
+- **QuickShare is back,** with end-to-end encryption. Share a document or whiteboard with a link, and anyone who opens it can save a copy to their own workspace.
+- **Better on phones,** with bottom-sheet menus, a scrollable toolbar, and a tap menu for moving blocks.
+- **More reliable Google Drive sync and import/export.**
+
+See the full [v2.0 release notes](https://github.com/project59/mintype/discussions) for details.
 
 ## Features
-Mintype was a personal project to address some of my issues with current popular note taking apps. The app has grown to a state where I now feel it can be useful to others.
 
-Mintype is free to use, and will remain free to use. Google Drive syncing is also free!
+### 🔒 Private by design
 
-### Maximizing Privacy
+- All notes are encrypted on your device (AES-GCM) before they are written to browser storage.
+- Notes unlock only with your password, which is never stored anywhere.
+- Notes are encrypted before they reach Google Drive. Open your Drive folder and you will see ciphertext.
+- Mark a page as **sensitive** to require your password again before it opens. This helps if you leave your device unattended.
+- QuickShare links carry their decryption key in the part of the URL that never reaches a server. Mintype only stores the encrypted file.
 
-Mintype has the following privacy features out of the box:
-
-- All notes are encrypted on your device inside indexedDB.
-- Notes can only be read after unlocking the app with your password. Your password is never stored anywhere.
-- Notes are encrypted prior to saving to Google Drive.
-- Additional feature to mark pages as sensitive, so your password is required again to view these pages. This is useful if you were to accidentally keep your device unattended.
+### ✍️ Documents
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/document.png" />
+  <img src="images/document.png" alt="A Mintype document with a callout, columns, a to-do list, a table and sections" />
 </p>
 
-### Offline first
+- Rich text with fonts, sizes, colours, highlights, links, and page mentions (`@`).
+- Blocks for callouts, collapsible coloured sections, 2–4 column layouts, tables, to-do lists, code with syntax highlighting, images, YouTube, and Google Maps.
+- Drag any block by its handle, or tap the handle on a phone to move, duplicate, or delete it.
+- Everything is stored as Markdown, so your notes stay portable.
 
-Mintype can be used offline. No need to worry about needing internet to view your notes.
-
-- The app is fully functional without internet
-- Your changes will be queued for syncing when you are online again
-
-### Dynamic Note-taking
-
-The document and whiteboard views allow for versatile note taking based on different needs and environments.
-
-- Rich text and many other blocks are supported.
-- Whiteboard supports the same blocks, plus drawing and shapes.
-- Whiteboard backgrounds, dots and grids support for things like maths graphing and chemistry equations.
-- Stickers and pre-made elements (coming soon) to provide quick note-taking utilities.
-- Touch support and mobile responsiveness for mobile devices.
-- Stylus support (coming soon).
-
-<p>
-  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/mobile.png" style="width: 200px;" />
-</p>
-
-### Built for a simple user experience
-
-Mintype is built with a very familiar file structure, organization heirarchy and minimal bloat. The goal is to get on with your note-taking without getting lost in features or complex UI. The mobile experience is also a top priority during development.
-
-- A simple workspace > page > nested page hierarchy.
-- Quick notes section to take notes on the go, and organize later.
-- Note organization utilities are built in, such as moving pages between workspaces, drag and drop to reorder, trashed folder and favorites.
-- Light and dark mode support is also built in.
-- Mobile app does not sacrifice any features, and has a very similair UX to desktop.
-- Very straightforward search feature (will be built out more with tags and filter options soon)
-
+### 🖼️ Whiteboards
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/project59/mintype/refs/heads/main/images/workspace.png"  />
+  <img src="images/whiteboard.png" alt="A Mintype whiteboard with a Markdown note, sticky notes, a shape and an arrow" />
 </p>
 
-## Is it available on MacOS / Linux / Android?
+- An infinite canvas with sticky notes, shapes, freehand drawing, arrows, groups, and images.
+- **Markdown boxes** put the full document editor onto the canvas: to-dos, callouts, tables, and more.
+- Follows the app's light or dark theme.
 
-Yes, Mintype is available on all devices with a browser. We recommend Chrome and Firefox on desktop. On Android I recommend Chrome for its PWA support. On iOS I recommend Safari for its PWA support.
+### 📱 Works everywhere, even offline
 
-## Is syncing free? Is it secure?
+- A web app that works in any modern browser. Chrome and Firefox are recommended on desktop.
+- Install it as an app (PWA): use Chrome on Android or Safari on iOS for the most native feel.
+- Fully usable offline. Changes are queued and sync when you are back online.
+- Phones get every feature, with menus that open as easy-to-tap bottom sheets.
 
-Yes, Mintype uses Google Drive as its sync mechanism free of charge. It runs completely client side (your notes do not go through our servers), and all your notes are encrypted client side prior to reaching any of Google's APIs. You can view you notes on Drive yourself and see that they are stored as ciphertext.
+### 🗂️ Simple organisation
 
-## Who can view my notes?
+- A familiar **workspace → page → sub-page** structure.
+- **Quick Notes** for jotting things down on the go and organising later.
+- Favourites, a trash folder, drag-and-drop reordering, and moving pages between workspaces.
+- Search across documents and whiteboards.
+- Import from Notion, Markdown, or Mintype JSON. Export to Markdown or encrypted JSON backups.
+- Light and dark mode.
 
-Only you can decipher your notes. They are encrypted with your password and stored on your device and in Google Drive (optional). We do not store your password anywhere, not even on your device. Mintype does not store your notes in our databases either.
+## FAQ
 
-## Do you collect any data?
+### Is Mintype free?
 
-There are no trackers or any other integrations in Mintype other that Supabase for authentication and Google APIs for drive sync. If you create an account, we do store your email and encrypted copies of your keys for authentication services and easy sign in on new a new device. Your email is not shared with any third parties.
+Yes. Mintype is free to use and will stay free, including Google Drive sync. If you would like to support development, you can [sponsor on GitHub](https://github.com/sponsors/project59) or [buy me a coffee](https://buymeacoffee.com/project59).
 
-## Will Mintype become open source?
+### Is syncing secure?
 
-This project is planned to be fully open source soon. For now, all code involved in saving notes, syncing and secure storage are relased for auditing purposes. Please note that in its current state, this project will NOT build. I am not accepting dedicated contributors as of now, but you are welcome to provide feature requests and bug fixes via Github issues and in-app feedback.
+Yes. Mintype syncs through your own Google Drive and runs entirely in your browser, so your notes never pass through Mintype's servers. Every note is encrypted before it reaches Google's APIs.
 
-## Are native iOS, Android and Desktop (Electron) apps planned?
+### Who can read my notes?
 
-An ElectronJS desktop version is planned, it will have the extra benefit of saving notes directly to disk (instead of indexedDB). This allows you to have your own sync mechanisms such as git repositories, one drive, syncthing etc... to sync and backup your notes.
+Only you. Notes are encrypted with a key protected by your password and stored on your device and, optionally, in your Google Drive. Your password is never stored, not even on your device, and Mintype keeps no copy of your notes.
 
-Mobile native apps are currently not planned. However they are likely given enough mobile native APIs become necessary.
+### Do you collect any data?
 
-## How can i get in touch / submit issues?
+There are no trackers. Mintype uses Supabase for accounts and Google APIs for Drive sync. If you create an account, we store your email and **encrypted** copies of your keys, so you can sign in easily on a new device. Your email is never shared with third parties. QuickShare stores only the encrypted file you choose to share.
 
-Follow for app updates here:
+### Is it available on macOS, Linux, Windows, Android and iOS?
 
-- [Github](https://github.com/project59/mintype)
-- [Github Issues](https://github.com/project59/mintype/issues)
+Yes. Mintype runs anywhere with a modern browser. Chrome and Firefox are recommended on desktop, Chrome on Android, and Safari on iOS (for PWA install).
+
+### Are native desktop or mobile apps planned?
+
+A desktop version built on Electron is planned. It will save notes directly to disk instead of browser storage, so you can sync and back them up your own way (git, OneDrive, Syncthing, and so on). Native mobile apps are not currently planned, but may come if they become necessary for mobile-only features.
+
+### How can I get in touch or report a bug?
+
+- [GitHub Issues](https://github.com/project59/mintype/issues) for bugs and feature requests
+- [GitHub Discussions](https://github.com/project59/mintype/discussions) for announcements and questions
 - [Roadmap](https://github.com/orgs/project59/projects/1)
-- [Community Forums](https://community.mintype.app/discussions)
+- [Discord](https://discord.gg/JyJH5seZqj)
+
+## Local development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 20.19 or newer, with npm
+- A modern browser (Chrome or Firefox)
+
+### Setup
+
+```bash
+git clone https://github.com/project59/mintype.git
+cd mintype
+npm install
+```
+
+Create a `.env` file in the project root:
+
+```bash
+# Required: the app will not start without these (placeholders are fine for offline-only use)
+VITE_SUPABASE_URL=http://localhost:54321
+VITE_SUPABASE_ANON_KEY=placeholder
+
+# Optional: needed for accounts, Google Drive sync and QuickShare
+VITE_BACKEND_URL=
+VITE_FRONTEND_URL=http://localhost:5173
+VITE_API_KEY=
+```
+
+| Variable | Used for |
+| --- | --- |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Account sign-in (Supabase). Required to boot. Placeholders work if you only use local, offline notes. |
+| `VITE_BACKEND_URL` | The Mintype API server, used by Drive token refresh, key backup, profile settings, and QuickShare. |
+| `VITE_FRONTEND_URL` | Where Google sign-in redirects back to, usually your dev server URL. |
+| `VITE_API_KEY` | Google API key for Drive sync. |
+
+Everything else works without a backend: creating a password, writing documents and whiteboards, search, and import/export all happen in the browser.
+
+### Run it
+
+```bash
+npm run dev
+```
+
+Open the URL Vite prints (usually http://localhost:5173), click **Enter Workspace**, and choose **New Setup** to create a local password.
+
+### Useful commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server with hot reload |
+| `npm run build` | Build the production bundle into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
+| `npm run check:markdown` | Round-trip test for the editor's Markdown parsing and serialisation |
+
+While the dev server is running, `/parity.html` compares how whiteboard Markdown boxes look when idle and while editing.
+
+### Project layout
+
+```text
+src/
+  apps/            app router
+  pages/           page, workspace, QuickShare and settings screens
+  layouts/         app shell, auth and encryption (secure context)
+  render/editor/   TipTap editor, custom blocks and Markdown
+  render/whiteboard/  tldraw canvas and encrypted persistence
+  lib/             encrypted storage (IndexedDB) and the Drive sync engine
+  components/      shared UI, import/export, search, trash, QuickShare
+  drivesync/       Google Drive integration
+```
+
+Built with React, Vite, Tailwind CSS, [TipTap](https://tiptap.dev), and [tldraw](https://tldraw.dev). See [`AGENTS.md`](AGENTS.md) for in-depth architecture notes.
+
+### Contributing
+
+Bug reports, feature requests, and small fixes are welcome through [GitHub Issues](https://github.com/project59/mintype/issues). I'm not taking on dedicated contributors right now.
+
+## Support Mintype
+
+Mintype is an independent project. If it is useful to you, please consider supporting it:
+
+- [GitHub Sponsors](https://github.com/sponsors/project59)
+- [Buy Me a Coffee](https://buymeacoffee.com/project59)
 
 ## Star History
 
@@ -117,4 +201,4 @@ Follow for app updates here:
  </picture>
 </a>
 
-<img src="https://raw.githubusercontent.com/project59/mintype/deeb93646c83e33f0d83c86b0f39d33e98d702b6/public/Mintype.svg" style="width: 100%;" />
+<img src="images/git-footer.png" alt="Mintype" style="width: 100%;" />

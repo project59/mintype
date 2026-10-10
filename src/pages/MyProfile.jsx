@@ -3,13 +3,12 @@ import { useSupabaseAuth } from '../layouts/auth/SupabaseAuthProvider';
 import PageHeaderWrapper from '../components/skeletons/PageHeaderWrapper';
 import PageSectionWrapper from '../components/skeletons/PageSectionWrapper';
 import { Edit } from 'lucide-react';
-import BadgeList from '../components/badges/BadgeList';
 import AvatarPicker from '../layouts/profile/AvatarPicker';
 import DisplayNameDialog from '../layouts/profile/DisplayNameDialog';
 
 export default function MyProfile() {
     const [profileData, setProfileData] = useState(null);
-    const [privateData, setPrivateData] = useState(null); // Separate state for private data
+    const [privateData, setPrivateData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showSupportId, setShowSupportId] = useState(false);
@@ -41,7 +40,7 @@ export default function MyProfile() {
                 // Fetch Private User Data
                 const { data: user_private, error: privateError } = await supabase
                     .from('user_private')
-                    .select('*')
+                    .select('email, support_id')
                     .eq('id', user.id)
                     .single();
 
@@ -119,16 +118,6 @@ export default function MyProfile() {
                         </div>
                     </div>
 
-                    <div className='md:w-1/2 bg-slate-300/10 dark:bg-slate-500/10 p-3 rounded-lg'>
-                        <div className='flex items-center gap-2'>
-                            <h3 className='textTitle'>Badges</h3>
-                            <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
-                                alpha
-                            </div>
-                        </div>
-                        <p className='textRegular text-gray-500 mb-4'>This info is visible to others</p>
-                        <BadgeList badgeIds={[111111, 100000]} />
-                    </div>
                 </div>
 
 
@@ -151,7 +140,7 @@ export default function MyProfile() {
                                             {privateData.support_id}
                                         </div>
                                         <div className='infoBox max-w-md'>
-                                            The support ID is used to contact support if you want to submit content to the store, have any questions or report an issue.
+                                            Use this ID when contacting Mintype support with questions or to report an issue.
                                         </div>
                                     </div>
                                 ) : (
@@ -166,60 +155,6 @@ export default function MyProfile() {
                         </div>
                     </div>
 
-                    <div className='md:w-1/2 flex flex-col bg-slate-300/10 dark:bg-slate-500/10 p-3 rounded-lg'>
-                        <div className='flex items-center gap-2'>
-                            <h3 className='textTitle'>Token Balance</h3>
-                            <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
-                                alpha
-                            </div>
-                        </div>
-                        <p className='textRegular text-gray-500 mb-4'>Your remaining credits</p>
-
-                        <div className='grid grid-cols-3 gap-4'>
-                            <div className='flex flex-col'>
-                                <p className='textLabel mb-1'>Store Tokens</p>
-                                <p className='text-2xl font-semibold'>{privateData.store_tokens}</p>
-                            </div>
-                            <div className='flex flex-col'>
-                                <p className='textLabel mb-1'>AI Tokens</p>
-                                <p className='text-2xl font-semibold'>{privateData.ai_tokens}</p>
-                            </div>
-                            <div className='flex flex-col'>
-                                <p className='textLabel mb-1'>OCR Tokens</p>
-                                <p className='text-2xl font-semibold'>{privateData.ocr_tokens}</p>
-                            </div>
-                        </div>
-
-                        <button className='btnPrimary w-fit mt-2'>
-                            Buy More
-                        </button>
-                    </div>
-                </div>
-
-                <div className=''>
-                    <div className='flex items-center gap-2'>
-                        <h3 className='textTitle'>Purchased Items</h3>
-                        <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
-                            alpha
-                        </div>
-                    </div>
-                    <p className='textRegular text-gray-500 mb-4'>View your templates, stickers and themes from the store</p>
-                    <div className='w-40 h-40 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center justify-center text-xs'>
-                        Under Contruction
-                    </div>
-                </div>
-
-                <div className=''>
-                    <div className='flex items-center gap-2'>
-                            <h3 className='textTitle'>Published Workspaces</h3>
-                            <div href="https://github.com/project59/mintype" className="text-xs rounded-full h-6 bg-blue-500 p-1 px-1.5 text-white font-medium">
-                                alpha
-                            </div>
-                        </div>
-                    <p className='textRegular text-gray-500 mb-4'>View and manage your published workspaces</p>
-                    <div className='w-40 h-40 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center justify-center text-xs'>
-                        Under Contruction
-                    </div>
                 </div>
 
                 <AvatarPicker isDialogOpen={showAvatarPicker} onClose={() => { refreshPublicProfile(); setShowAvatarPicker(false) }} />

@@ -1,179 +1,112 @@
-import dbService from '../../lib/dbService';
+import JSZip from 'jszip';
 import { nanoid } from 'nanoid';
+import dbService from '../../lib/dbService';
+import { decryptDataWithMasterKey } from '../../layouts/secure-context/secureUtils';
 
-export async function JSONImporter(zipFile, selectedRootId, masterKey) {
-    const JSZip = await import('jszip');
-    const zip = await JSZip.default.loadAsync(zipFile);
-    let metadataFile = null;
-    const pageFiles = [];
-    const failedFiles = [];
+export const MINTYPE_DATA_FILE = 'mintype-data.json';
+export const MINTYPE_EXPORT_VERSION = 2;
 
-    // First pass: identify metadata file and page files
-    for (const [filename, file] of Object.entries(zip.files)) {
-        if (!file.dir) {
-            if (filename === 'mintype-data.json') {
-                try {
-                    const content = await file.async('text');
-                    metadataFile = JSON.parse(content);
-                } catch (error) {
-                    failedFiles.push({
-                        filename,
-                        error: `JSON parsing error: ${error.message}`,
-                        data: null
-                    });
-                }
-            } else if
-                (filename.endsWith('.json')) {
-                try {
-                    const content = await file.async('text');
-                    const pageData = JSON.parse(content);
-                    pageFiles.push({ filename: filename.replace('.json', ''), data: pageData });
-                } catch (error) {
-                    failedFiles.push({
-                        filename,
-                        error: `JSON parsing error: ${error.message}`,
-                        data: null
-                    });
-                }
-            }
+// IDs are nanoid() or Notion-style hex strings; shorter word-like tokens are never IDs.
+const ID_TOKEN = /[\w-]{10,}/g;
+
+const contentProblem = (entry, content) => {
+    if (!content || typeof content !== 'object') return 'Page content is not valid JSON';
+    if (entry.type === 'workspace') return null;
+    if (entry.type === 'document') {
+        return typeof content.markdown === 'string' ? null : 'Unsupported document format (exported before Mintype 2.0?)';
+    }
+    if (entry.type === 'whiteboard') {
+        return Object.hasOwn(content, 'tldraw') ? null : 'Unsupported whiteboard format (exported before Mintype 2.0?)';
+    }
+    return `Unknown page type "${entry.type}"`;
+};
+
+const readEntries = async (data, masterKey) => {
+    if (!data.encrypted) return data.entries;
+    try {
+        return (await decryptDataWithMasterKey(masterKey, data.iv, data.ciphertext)).entries;
+    } catch {
+        throw new Error('This export was encrypted with different keys. Unlock Mintype with the keys it was exported from and try again.');
+    }
+};
+
+// Imports a workspace exported by JsonExporter as a new copy: every page gets a new ID, and
+// hierarchy, internal page references and page IDs inside content are remapped to match, so an
+// import never overwrites existing pages or their Drive files. Encrypted exports must be imported
+// with the same master key; plaintext exports from earlier versions are also accepted.
+export async function importMintypeZip(zipFile, masterKey) {
+    const zip = await JSZip.loadAsync(zipFile);
+    const dataFile = zip.file(MINTYPE_DATA_FILE);
+    if (!dataFile) throw new Error(`${MINTYPE_DATA_FILE} was not found. Is this a Mintype JSON export?`);
+
+    let data;
+    try {
+        data = JSON.parse(await dataFile.async('text'));
+    } catch {
+        throw new Error(`${MINTYPE_DATA_FILE} is not valid JSON.`);
+    }
+    const entries = await readEntries(data, masterKey);
+    if (!Array.isArray(entries)) throw new Error(`${MINTYPE_DATA_FILE} contains no pages.`);
+
+    const workspace = entries.find((entry) => entry.parentId === null && entry.type === 'workspace');
+    if (!workspace) throw new Error('This export does not contain a workspace.');
+
+    const failures = [];
+    const contents = new Map();
+    for (const entry of entries) {
+        const name = entry.name || 'Untitled';
+        const file = zip.file(`${entry.id}.json`);
+        if (!file) {
+            failures.push({ name, error: 'Page content is missing from the export' });
+            continue;
+        }
+        try {
+            const stored = JSON.parse(await file.async('text'));
+            const content = data.encrypted
+                ? await decryptDataWithMasterKey(masterKey, stored.iv, stored.ciphertext)
+                : stored;
+            const problem = contentProblem(entry, content);
+            if (problem) failures.push({ name, error: problem });
+            else contents.set(entry.id, content);
+        } catch (error) {
+            failures.push({ name, error: `Could not read page content: ${error.message}` });
         }
     }
-
-    let importedCount = 0;
-
-    if (metadataFile && metadataFile.entries) {
-        // Structured import with metadata file
-        const entriesById = new Map(metadataFile.entries.map(entry => [entry.id, entry]));
-        const pageFilesById = new Map(pageFiles.map(page => [page.filename, page.data]));
-
-        // Create metadata entries
-        for (const metaEntry of metadataFile.entries) {
-            try {
-                await dbService.addMetaEntry({
-                    id: metaEntry.id,
-                    addToQueue: true,
-                    newContent: {
-                        ...metaEntry,
-                        remoteFileId: null,
-                        wikiId: null
-                    }
-                });
-                importedCount++;
-
-                // If this entry has a corresponding page file, create content entry
-                if (pageFilesById.has(metaEntry.id)) {
-                    const pageContent = pageFilesById.get(metaEntry.id);
-                    await dbService.addEntry({
-                        addToQueue: true,
-                        id: metaEntry.id,
-                        preloadedData: pageContent,
-                        masterKey: masterKey
-                    });
-
-                }
-            } catch (error) {
-                failedFiles.push({
-                    filename: `metadata-entry-${metaEntry.id}`,
-                    error: `Failed to save entry: ${error.message}`,
-                    data: metaEntry
-                });
-            }
-        }
+    if (!contents.has(workspace.id)) {
+        throw new Error('The workspace itself could not be read from this export.');
     }
-    // else {
-    //     for (const { filename, data } of pageFiles) {
-    //         try {
-    //             const pageId = data.id || nanoid();
-    //             // if data.type is 'workspace', we skip this file
-    //             if (data.type === 'workspace') {
-    //                 failedFiles.push({
-    //                     filename,
-    //                     error: 'Skipping workspace file during unstructured import',
-    //                     data
-    //                 });
-    //                 continue;
-    //             }
-    //             const pageType = data.type || 'document';
 
+    const newIds = new Map([...contents.keys()].map((id) => [id, nanoid()]));
+    const remapIds = (text) => text.replace(ID_TOKEN, (token) => newIds.get(token) ?? token);
+    const newWorkspaceId = newIds.get(workspace.id);
+    // Pages whose parent was not imported are kept at the top of the workspace.
+    const newParentId = (entry) => {
+        if (entry.id === workspace.id) return null;
+        if (entry.parentId === 'quickNote') return entry.parentId;
+        return newIds.get(entry.parentId) ?? newWorkspaceId;
+    };
 
-    //             // Create metadata entry
-    //             await dbService.addEntry({
-    //                 addToQueue: true,
-    //                 id: pageId,
-    //                 newContent: {
-    //                     name: data.name,
-    //                     type: pageType || 'document',
-    //                     emoji: data.emoji || null,
-    //                     created: data.created || Date.now(),
-    //                     lastModified: Date.now(),
-    //                     lastMetadataModified: Date.now(),
-    //                     isFavorite: data.isFavorite || false,
-    //                     order: data.order || 1000000,
-    //                     deleted: false,
-    //                     remoteFileId: null,
-    //                     wikiId: null,
-    //                 },
-    //                 rootId: selectedRootId, //change
-    //                 parentId: selectedRootId, //change
-    //                 masterKey: masterKey
-    //             });
-
-    //             // Create content entry
-    //             await dbService.addContentEntry({
-    //                 addToQueue: true,
-    //                 id: pageId,
-    //                 newContent: {
-    //                     elements: data.elements || null,
-    //                     comments: data.comments || null,
-    //                     preferences: data.preferences || null
-    //                 },
-    //                 masterKey: masterKey
-    //             });
-
-    //             importedCount++;
-    //         } catch (error) {
-    //             failedFiles.push({
-    //                 filename,
-    //                 error: `Failed to import page: ${error.message}`,
-    //                 data
-    //             });
-    //         }
-    //     }
-    // }
+    const expectedNotesGeneration = dbService.getNotesGeneration();
+    const imported = entries.filter((entry) => contents.has(entry.id));
+    for (const entry of imported) {
+        const meta = {
+            ...entry,
+            id: newIds.get(entry.id),
+            parentId: newParentId(entry),
+            rootId: newWorkspaceId,
+            remoteFileId: null,
+        };
+        const content = JSON.parse(remapIds(JSON.stringify(contents.get(entry.id))));
+        const didImport = await dbService.importPage({ meta, content, masterKey, expectedNotesGeneration });
+        if (!didImport) throw new Error('Notes were reset during the import.');
+    }
+    dbService.notifyUpdate();
 
     return {
-        imported: importedCount,
-        failedFiles,
-        summary: {
-            total: pageFiles.length + (metadataFile ? 1 : 0),
-            success: importedCount,
-            failures: failedFiles.length,
-            hasMetadata: !!metadataFile
-        }
+        total: entries.length,
+        success: imported.length,
+        failed: failures.length,
+        failures,
+        workspaceId: newWorkspaceId,
     };
-}
-
-export async function saveToIndexedDB(page) {
-    await dbService.addEntry({
-        addToQueue: true,
-        preloadedData: page
-    });
-}
-
-// Helper function to process import results
-export function generateImportReport(results) {
-    let report = `Import Summary:\n`;
-    report += `Total files processed: ${results.summary.total}\n`;
-    report += `Successfully imported: ${results.summary.imported}\n`;
-    report += `Failed: ${results.summary.failed}\n`;
-    report += `Metadata file: ${results.summary.hasMetadata ? 'Found' : 'Not found (unstructured import)'}\n\n`;
-
-    if (results.failedFiles.length > 0) {
-        report += `Failed Files:\n`;
-        results.failedFiles.forEach(file => {
-            report += `- ${file.filename}: ${file.error}\n`;
-        });
-    }
-
-    return report;
 }

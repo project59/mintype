@@ -1,11 +1,11 @@
-import { Ellipsis, Lock, Star } from "lucide-react";
-import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
+import { Ellipsis, Lock, Share2, Star } from "lucide-react";
+import { CloseButton, Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 import { useEffect, useState } from "react";
 import CloudIndicator from "../../components/common/CloudIndicator.jsx";
-import PagePreferences from "./PagePreferences.jsx";
+import PageExportOptions from "./PageExportOptions.jsx";
 import SharePageDialog from "../../components/quickshare/SharePageDialog.jsx";
 
-export default function PageOptionsPopup({ page, setFavorite, setSensitive, updatePreferences, setWidth }) {
+export default function PageOptionsPopup({ page, setFavorite, setSensitive, setWidth, markdown }) {
     const [savedToCloud, setSavedToCloud] = useState(false);
     const [showQuickShare, setShowQuickShare] = useState(false);
 
@@ -30,21 +30,23 @@ export default function PageOptionsPopup({ page, setFavorite, setSensitive, upda
                     className="text-sm z-50 bg-white dark:bg-slate-900 text-black rounded-xl p-4 min-w-72 shadow"
                 >
                     <div className="flex flex-col gap-4 items-center text-sm text-gray-400">
-                        {/* <div className="flex justify-between items-center w-full">
-                            <div className='flex flex-col'>
-                                <div className={'textLabel'}>Quick Share</div>
-                                <span className='text-xs text-gray-400'>
-                                    Share this page with a link
-                                </span>
+                        {(page?.type === 'document' || page?.type === 'whiteboard') && (
+                            <div className="flex justify-between items-center w-full">
+                                <div className='flex flex-col'>
+                                    <div className={'textLabel'}>Quick Share</div>
+                                    <span className='text-xs text-gray-400'>
+                                        Share this page with a link
+                                    </span>
+                                </div>
+                                <CloseButton
+                                    onClick={() => setShowQuickShare(true)}
+                                    title="Share"
+                                    className="w-8 h-8  flex items-center justify-center duration-200 text-gray-300 bg-slate-300/30 rounded-[50px]"
+                                >
+                                    <Share2 size={12} />
+                                </CloseButton>
                             </div>
-                            <CloseButton
-                                onClick={() => setShowQuickShare(true)}
-                                title="Share"
-                                className="w-8 h-8  flex items-center justify-center duration-200 text-gray-300 bg-slate-300/30 rounded-[50px]"
-                            >
-                                <Share2 size={12} />
-                            </CloseButton>
-                        </div> */}
+                        )}
                         {page?.parentId !== 'quickNote' && (
                             <div className="flex justify-between items-center w-full">
                                 <div className='flex flex-col'>
@@ -92,14 +94,17 @@ export default function PageOptionsPopup({ page, setFavorite, setSensitive, upda
                         )}
 
                         {/* <CloudIndicator savedToCloud={savedToCloud} /> */}
-                        <PagePreferences pageId={page?.id} updatePreferences={updatePreferences} />
+                        <PageExportOptions pageId={page?.id} markdown={markdown} type={page?.type} />
                     </div>
                 </PopoverPanel>
             </Popover>
 
-            <SharePageDialog isOpen={showQuickShare} onClose={
-                () => setShowQuickShare(!showQuickShare)
-            } />
+            <SharePageDialog
+                isOpen={showQuickShare}
+                onClose={() => setShowQuickShare(false)}
+                page={page}
+                markdown={markdown}
+            />
         </>
     );
 }
