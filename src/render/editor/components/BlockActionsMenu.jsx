@@ -58,11 +58,7 @@ const MenuItem = ({ icon: Icon, label, onClick, disabled = false, danger = false
     type="button"
     disabled={disabled}
     onClick={onClick}
-    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${
-      danger
-        ? 'text-zinc-700 hover:bg-rose-50 hover:text-rose-600 dark:text-zinc-200 dark:hover:bg-rose-950/40'
-        : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
-    }`}
+    className={`dropdownItem text-left hover:bg-gray-100 disabled:cursor-not-allowed dark:hover:bg-slate-800 ${danger ? '!text-red-500' : ''}`}
   >
     <Icon size={14} />
     {label}
@@ -140,7 +136,7 @@ const BlockActionsMenu = ({ editor, target }) => (
     </PopoverButton>
     <ResponsivePopoverPanel
       anchor={{ to: 'bottom start', gap: '6px', padding: '12px' }}
-      className="z-50 w-44 rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+      className="dropdownPanel"
     >
       {({ close, phone }) => (
         <MenuSession editor={editor} target={target}>

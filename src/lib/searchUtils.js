@@ -28,33 +28,28 @@ export function rankResults(results) {
     });
 }
 
-export async function performSearch(db, query, workspaceId = null, maxResults = 50) {
+// Search needs readable text, so the index holds decrypted titles and page text. It lives only in
+// memory, from when the search window opens until it closes or the app locks, and never on disk.
+let searchIndex = [];
+let indexGeneration = 0;
+
+export function performSearch(query, workspaceId = null, maxResults = 50) {
     if (!query || query.length < 2) return [];
 
-    try {
-        const store = db.transaction('searchIndex', 'readonly').objectStore('searchIndex');
-        const records = workspaceId
-            ? await store.index('rootId').getAll(IDBKeyRange.only(workspaceId))
-            : await store.getAll();
+    const queryLower = query.toLowerCase();
+    const results = searchIndex
+        .filter((record) => (!workspaceId || record.rootId === workspaceId) && record.content.toLowerCase().includes(queryLower))
+        .map((record) => ({
+            pageId: record.pageId,
+            pageTitle: record.pageTitle,
+            snippet: createSnippet(record.content, query),
+            type: record.type,
+            isFavorite: record.isFavorite,
+            rootId: record.rootId,
+            lastModified: record.lastModified
+        }));
 
-        const queryLower = query.toLowerCase();
-        const results = records
-            .filter((record) => record.content.toLowerCase().includes(queryLower))
-            .map((record) => ({
-                pageId: record.pageId,
-                pageTitle: record.pageTitle,
-                snippet: createSnippet(record.content, query),
-                type: record.type,
-                isFavorite: record.isFavorite,
-                rootId: record.rootId,
-                lastModified: record.lastModified
-            }));
-
-        return rankResults(results).slice(0, maxResults);
-    } catch (error) {
-        console.error('Search error:', error);
-        return [];
-    }
+    return rankResults(results).slice(0, maxResults);
 }
 
 function buildPageRecords(page, pageContent, resolvePageTitle) {
@@ -82,7 +77,8 @@ function buildPageRecords(page, pageContent, resolvePageTitle) {
     return records;
 }
 
-export async function initializeSearchIndex(db, masterKey) {
+export async function initializeSearchIndex(masterKey) {
+    const generation = ++indexGeneration;
     try {
         const [entries, contents] = await Promise.all([
             dbService.getAllEntries(),
@@ -97,22 +93,14 @@ export async function initializeSearchIndex(db, masterKey) {
             .filter((page) => page.type !== 'workspace' && !page.sensitive && !page.deleted)
             .flatMap((page) => buildPageRecords(page, contentById.get(page.id), resolvePageTitle));
 
-        const tx = db.transaction('searchIndex', 'readwrite');
-        const store = tx.objectStore('searchIndex');
-        store.clear();
-        records.forEach((record) => store.put(record));
-        await tx.done;
+        // Search may have been closed, or the app locked, while pages were decrypting.
+        if (generation === indexGeneration) searchIndex = records;
     } catch (error) {
         console.error('Error initializing search index:', error);
     }
 }
 
-export async function clearSearchIndex(db) {
-    try {
-        const tx = db.transaction('searchIndex', 'readwrite');
-        tx.objectStore('searchIndex').clear();
-        await tx.done;
-    } catch (error) {
-        console.error('Error clearing search index:', error);
-    }
+export function clearSearchIndex() {
+    indexGeneration++;
+    searchIndex = [];
 }

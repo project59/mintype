@@ -1,53 +1,22 @@
 // Shared by the callout's node view and its static HTML so both draw the same box (see
-// blockStyles.js). Icons are lucide's Info, TriangleAlert, CircleX and CircleCheck as data.
+// blockStyles.js). Each type is shown by its emoji, which in the editor also picks the type.
 export const CALLOUT_TYPES = [
-  {
-    value: 'info',
-    label: 'Info',
-    iconClassName: 'text-black dark:text-white',
-    icon: [
-      ['circle', { cx: '12', cy: '12', r: '10' }],
-      ['path', { d: 'M12 16v-4' }],
-      ['path', { d: 'M12 8h.01' }],
-    ],
-  },
-  {
-    value: 'warning',
-    label: 'Warning',
-    iconClassName: 'text-amber-900 dark:text-amber-200',
-    icon: [
-      ['path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' }],
-      ['path', { d: 'M12 9v4' }],
-      ['path', { d: 'M12 17h.01' }],
-    ],
-  },
-  {
-    value: 'error',
-    label: 'Error',
-    iconClassName: 'text-red-800 dark:text-red-200',
-    icon: [
-      ['circle', { cx: '12', cy: '12', r: '10' }],
-      ['path', { d: 'm15 9-6 6' }],
-      ['path', { d: 'm9 9 6 6' }],
-    ],
-  },
-  {
-    value: 'success',
-    label: 'Success',
-    iconClassName: 'text-green-800 dark:text-green-200',
-    icon: [
-      ['circle', { cx: '12', cy: '12', r: '10' }],
-      ['path', { d: 'm9 12 2 2 4-4' }],
-    ],
-  },
+  { value: 'info', label: 'Info', emoji: '💡' },
+  { value: 'warning', label: 'Warning', emoji: '⚠️' },
+  { value: 'error', label: 'Error', emoji: '🛑' },
+  { value: 'success', label: 'Success', emoji: '✅' },
 ];
 
 export const getCalloutType = (value) => CALLOUT_TYPES.find((option) => option.value === value) || CALLOUT_TYPES[0];
 
-export const CALLOUT_ICON_SIZE = 20;
+// Callouts written with a custom `emoji` attribute keep showing it until another type is picked.
+export const calloutEmoji = (attrs) => attrs.emoji || getCalloutType(attrs.type).emoji;
 
-// Layout classes shared by both renderings: the icon slot (an emoji or the type's icon) and the
-// row holding it beside the content.
-export const calloutIconSlotClass = (type) => `mt-1 flex h-5 w-5 shrink-0 items-center justify-center text-lg leading-none ${type.iconClassName}`;
-export const CALLOUT_ROW_CLASS = 'flex items-start gap-3 px-4 py-3';
-export const CALLOUT_BOX_CLASS = 'my-3 rounded-xl';
+// Emoji fonts first: text fonts on some systems draw ✅ as a faint monochrome glyph.
+export const CALLOUT_EMOJI_FONT_CLASS = "[font-family:'Apple_Color_Emoji','Segoe_UI_Emoji','Noto_Color_Emoji',sans-serif]";
+
+// Layout classes shared by both renderings: the emoji slot, the content beside it, and their row.
+export const CALLOUT_EMOJI_SLOT_CLASS = `mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md p-0 text-lg leading-none ${CALLOUT_EMOJI_FONT_CLASS}`;
+export const CALLOUT_ROW_CLASS = 'flex items-start gap-2 px-5 pt-4 pb-3';
+export const CALLOUT_CONTENT_CLASS = 'callout-content ml-4 min-w-0 flex-1';
+export const CALLOUT_BOX_CLASS = 'my-3 rounded-lg';

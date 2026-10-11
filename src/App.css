@@ -163,7 +163,7 @@ pre[class*="language-"] {
 }
 
 .dropdownPanel {
-	@apply w-48 p-1 shadow rounded-lg text-sm absolute z-50 dark:bg-slate-900 bg-white flex flex-col gap-1;
+	@apply w-48 p-1 shadow-md rounded-lg text-sm absolute z-50 dark:bg-slate-900 bg-slate-50 flex flex-col gap-1;
 }
 
 .infoBox {

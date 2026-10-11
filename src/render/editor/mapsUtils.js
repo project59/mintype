@@ -1,3 +1,31 @@
+// Share-button links (maps.app.goo.gl/…, goo.gl/maps/…) only redirect to the full Maps URL, and
+// Google sends no CORS headers, so the browser cannot follow them; the backend resolves them.
+export const isShortMapsLink = (input) => {
+  try {
+    const url = new URL(input.trim());
+    const hostname = url.hostname.toLowerCase();
+    return hostname === 'maps.app.goo.gl' || (hostname === 'goo.gl' && url.pathname.startsWith('/maps'));
+  } catch {
+    return false;
+  }
+};
+
+// Returns the full Google Maps URL a short link points to, or '' if it cannot be resolved.
+export const resolveShortMapsLink = async (input) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/resolve-maps-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: input.trim() }),
+    });
+    if (!response.ok) return '';
+    const { url } = await response.json();
+    return typeof url === 'string' && getGoogleMapsEmbedUrl(url) ? url : '';
+  } catch {
+    return '';
+  }
+};
+
 export const getGoogleMapsEmbedUrl = (input) => {
   if (!input) return '';
 
@@ -9,10 +37,7 @@ export const getGoogleMapsEmbedUrl = (input) => {
   }
 
   const hostname = url.hostname.toLowerCase();
-  const isGoogleMapsHost = hostname === 'maps.app.goo.gl'
-    || hostname === 'goo.gl'
-    || hostname === 'google.com'
-    || hostname.endsWith('.google.com');
+  const isGoogleMapsHost = hostname === 'google.com' || hostname.endsWith('.google.com');
   if (!isGoogleMapsHost || !['http:', 'https:'].includes(url.protocol)) return '';
 
   if (url.pathname.startsWith('/maps/embed')) {
@@ -47,9 +72,6 @@ export const getGoogleMapsEmbedUrl = (input) => {
       : '');
   }
 
-  if (!location && (hostname === 'maps.app.goo.gl' || hostname === 'goo.gl')) {
-    location = url.toString();
-  }
   if (!location) return '';
 
   const embedUrl = new URL('https://www.google.com/maps');

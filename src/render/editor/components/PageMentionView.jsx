@@ -80,7 +80,7 @@ const PageMentionView = ({ node, editor, deleteNode, selected }) => {
           ref={panelRef}
           role="menu"
           aria-label="Page link"
-          className="fixed z-[10000] flex w-48 flex-col rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+          className="fixed z-[10000] flex w-48 flex-col rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-slate-900"
           style={{ top: menu.top, left: menu.left }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') setMenu(null);
@@ -92,7 +92,7 @@ const PageMentionView = ({ node, editor, deleteNode, selected }) => {
             disabled={!path}
             onMouseDown={(event) => event.preventDefault()}
             onClick={openPage}
-            className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:hover:bg-zinc-800"
+            className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:hover:bg-slate-800"
           >
             <ExternalLink size={14} />
             Open page

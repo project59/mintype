@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
 import "../../App.css";
 import Page from "../../pages/Page.jsx";
@@ -20,14 +21,36 @@ import DefaultHome from "../../pages/DefaultHome.jsx";
 import SecureSettings from "../../layouts/secure-context/SecureSettings.jsx";
 import AnonRootLayout from "../../layouts/root/AnonRootLayout.jsx";
 import MyProfile from "../../pages/MyProfile.jsx";
+import ResetPage from "../../pages/ResetPage.jsx";
+import ErrorPage from "../../pages/ErrorPage.jsx";
+
+const DocsPage = lazy(() => import("../../pages/docs/DocsPage.jsx"));
+const docsElement = (
+	<Suspense fallback={<div className="min-h-screen bg-white dark:bg-[#10101e]" />}>
+		<DocsPage />
+	</Suspense>
+);
 
 const router = createBrowserRouter([
 	{
 		path: "/",
+		errorElement: <ErrorPage />,
 		children: [
 			{
 				index: true,
 				element: <DefaultHome />
+			},
+			{
+				// Outside RootLayout so it opens no databases and works when the app cannot.
+				path: "reset",
+				element: <ResetPage />
+			},
+			{
+				path: "docs",
+				children: [
+					{ index: true, element: docsElement },
+					{ path: ":slug", element: docsElement },
+				]
 			},
 			{
 				// RootLayout wraps everything except DefaultHome

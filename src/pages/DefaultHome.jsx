@@ -91,6 +91,10 @@ function Privacy() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10">
                     {PROMISES.map((p, i) => <PrivacyPromise key={p.title} promise={p} index={i} />)}
                 </div>
+                <Link to="/docs/security-overview" className="mt-14 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100 group">
+                    How Mintype protects your notes
+                    <ArrowRight size={14} className="group-hover:translate-x-0.5 duration-150" />
+                </Link>
             </div>
         </section>
     );
@@ -174,6 +178,9 @@ export default function DefaultHome() {
                         <p className="font-semibold text-xl text-black dark:text-white">Mintype</p>
                     </div>
                     <div className="flex items-center gap-1">
+                        <Link to="/docs" className="mr-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                            Docs
+                        </Link>
                         <a href="https://github.com/project59/mintype" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
                             v2.0
                         </a>
@@ -196,6 +203,9 @@ export default function DefaultHome() {
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Questions or ideas? Let us know on GitHub.</p>
                         </div>
                         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                            <Link to="/docs" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white duration-150">
+                                Docs
+                            </Link>
                             {FOOTER_LINKS.map((link) => (
                                 <a key={link.label} href={link.href} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white duration-150">
                                     {link.label}

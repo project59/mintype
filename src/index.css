@@ -97,7 +97,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .dropdownItem{
-  @apply px-2 py-1.5 rounded-md text-gray-700 dark:text-slate-300 dark:data-[active]:bg-slate-800 flex items-center gap-2 data-[active]:bg-gray-100 disabled:opacity-40 duration-200;
+  @apply px-2 py-1.5 rounded-md text-gray-700 dark:text-slate-300 dark:data-[active]:bg-slate-800 flex items-center gap-2 data-[active]:bg-gray-200 disabled:opacity-40 duration-200;
 }
 
 .dialogBackdrop{
@@ -283,40 +283,33 @@ h1, h2, h3, h4, h5, h6 {
 }
 .tiptap .resize-cursor { cursor: col-resize; }
 
-/* Callout */
+/* Callout: dark tints are each type's colour at ~12% over the dark page background (#1f1f2d). */
 .callout {
   @apply rounded-lg my-2;
 }
 .callout-info {
   background-color: #f3f4f6;
-  border: 1px solid #8b8b8a77;
 }
 .dark .callout-info {
-  background-color: rgb(26, 26, 26);
+  background-color: #2c2c3a;
 }
 .callout-warning {
-  background-color: #fffbea;
-  border: 1px solid #f1df9f;
+  background-color: #fcf1cf;
 }
 .dark .callout-warning {
-  background-color: #302814;
-  border-color: #735d25;
+  background-color: #392e29;
 }
 .callout-error {
   background-color: #ffe8e8;
-  border: 1px solid #f3c2c7;
 }
 .dark .callout-error {
-  background-color: #3b0d15;
-  border-color: #762638;
+  background-color: #38242f;
 }
 .callout-success {
   background-color: #dff8ee;
-  border: 1px solid #b5e8d3;
 }
 .dark .callout-success {
-  background-color: #062a20;
-  border-color: #145541;
+  background-color: #1d3237;
 }
 
 /* YouTube */

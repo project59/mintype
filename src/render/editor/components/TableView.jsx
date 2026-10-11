@@ -1,17 +1,29 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { Popover, PopoverButton } from '@headlessui/react';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
 import { TableMap } from '@tiptap/pm/tables';
 import {
   AlignCenter, AlignLeft, AlignRight, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, ArrowUpToLine,
   GripHorizontal, GripVertical, Plus, Trash2,
 } from 'lucide-react';
+import { ResponsivePopoverPanel } from '../../../components/common/ResponsivePopover.jsx';
 import { TABLE_BOX_CLASS, TABLE_SCROLL_CLASS } from '../nodes/blockStyles.js';
 
 const gripClass = 'flex items-center justify-center rounded border border-zinc-200 bg-white text-zinc-400 shadow-sm hover:text-zinc-700 data-[open]:border-indigo-400 data-[open]:text-indigo-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100';
 const addBarClass = 'absolute flex items-center justify-center rounded bg-zinc-100 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-200 hover:text-zinc-700 focus-visible:opacity-100 group-hover/table:opacity-100 dark:bg-zinc-800 dark:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200 [@media(hover:none)]:opacity-100';
 
-const MenuItem = ({ icon: Icon, label, onClick, disabled = false, danger = false }) => (
+// A menu row on larger screens and a sheet tile on phones.
+const MenuItem = ({ icon: Icon, label, shortLabel = label, onClick, phone, disabled = false, danger = false }) => (phone ? (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onClick}
+    className={`sheetButton h-auto min-h-12 flex-col justify-center gap-1 py-2 leading-tight ${danger ? 'sheetButtonDanger' : ''}`}
+  >
+    <Icon size={18} />
+    {shortLabel}
+  </button>
+) : (
   <button
     type="button"
     disabled={disabled}
@@ -20,26 +32,25 @@ const MenuItem = ({ icon: Icon, label, onClick, disabled = false, danger = false
     className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${
       danger
         ? 'text-zinc-700 hover:bg-rose-50 hover:text-rose-600 dark:text-zinc-200 dark:hover:bg-rose-950/40'
-        : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
+        : 'text-zinc-700 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-slate-800'
     }`}
   >
     <Icon size={14} />
     {label}
   </button>
-);
+));
 
 const GripMenu = ({ label, icon: Icon, style, className, children }) => (
   <Popover className="absolute z-10" style={style}>
     <PopoverButton aria-label={label} title={label} onMouseDown={(event) => event.preventDefault()} className={`${gripClass} ${className}`}>
       <Icon size={12} />
     </PopoverButton>
-    <PopoverPanel
-      portal
+    <ResponsivePopoverPanel
       anchor={{ to: 'bottom start', gap: '6px', padding: '12px' }}
-      className="z-50 w-48 rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+      className="z-50 w-48 rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-slate-900"
     >
-      {({ close }) => children(close)}
-    </PopoverPanel>
+      {({ close, phone }) => children(close, phone)}
+    </ResponsivePopoverPanel>
   </Popover>
 );
 
@@ -105,27 +116,27 @@ const TableView = ({ node, editor, getPos }) => {
       {editor.isEditable && gripPositions && (
         <div contentEditable={false}>
           <GripMenu label="Row options" icon={GripVertical} style={gripPositions.row} className={`h-5 w-3 ${gripVisibility}`}>
-            {(close) => {
+            {(close, phone) => {
               const run = (action) => () => { action(); close(); };
               const { row, col } = active;
               return (
-                <>
-                  <MenuItem icon={ArrowUpToLine} label="Insert row above" disabled={row === 0} onClick={run(() => inCell(row, col).addRowBefore().run())} />
-                  <MenuItem icon={ArrowDownToLine} label="Insert row below" onClick={run(() => inCell(row, col).addRowAfter().run())} />
-                  <MenuItem icon={Trash2} label="Delete row" danger disabled={map.height === 1} onClick={run(() => deleteRow(row, col))} />
-                  <MenuItem icon={Trash2} label="Delete table" danger onClick={run(() => inCell(0, 0).deleteTable().run())} />
-                </>
+                <div className={phone ? 'sheetGrid grid-cols-4' : 'contents'}>
+                  <MenuItem phone={phone} icon={ArrowUpToLine} label="Insert row above" shortLabel="Above" disabled={row === 0} onClick={run(() => inCell(row, col).addRowBefore().run())} />
+                  <MenuItem phone={phone} icon={ArrowDownToLine} label="Insert row below" shortLabel="Below" onClick={run(() => inCell(row, col).addRowAfter().run())} />
+                  <MenuItem phone={phone} icon={Trash2} label="Row" danger disabled={map.height === 1} onClick={run(() => deleteRow(row, col))} />
+                  <MenuItem phone={phone} icon={Trash2} label="Table" danger onClick={run(() => inCell(0, 0).deleteTable().run())} />
+                </div>
               );
             }}
           </GripMenu>
           <GripMenu label="Column options" icon={GripHorizontal} style={gripPositions.col} className={`h-3 w-5 ${gripVisibility}`}>
-            {(close) => {
+            {(close, phone) => {
               const run = (action) => () => { action(); close(); };
               const { row, col } = active;
               const align = node.child(0).child(col).attrs.align;
               return (
                 <>
-                  <div className="mb-1 flex gap-1 border-b border-zinc-100 px-1 pb-1 dark:border-zinc-800">
+                  <div className={phone ? 'sheetGrid mb-2 grid-cols-3' : 'mb-1 flex gap-1 border-b border-zinc-100 px-1 pb-1 dark:border-slate-800'}>
                     {[['left', AlignLeft], ['center', AlignCenter], ['right', AlignRight]].map(([value, Icon]) => (
                       <button
                         key={value}
@@ -135,18 +146,20 @@ const TableView = ({ node, editor, getPos }) => {
                         aria-pressed={(align || 'left') === value}
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={run(() => setColumnAlign(col, value === 'left' ? null : value))}
-                        className={`flex h-7 flex-1 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 ${
-                          (align || 'left') === value ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white' : ''
+                        className={phone ? 'sheetButton justify-center' : `flex h-7 flex-1 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-slate-800 ${
+                          (align || 'left') === value ? 'bg-zinc-100 text-zinc-900 dark:bg-slate-800 dark:text-white' : ''
                         }`}
                       >
-                        <Icon size={14} />
+                        <Icon size={phone ? 18 : 14} />
                       </button>
                     ))}
                   </div>
-                  <MenuItem icon={ArrowLeftToLine} label="Insert column left" onClick={run(() => inCell(row, col).addColumnBefore().run())} />
-                  <MenuItem icon={ArrowRightToLine} label="Insert column right" onClick={run(() => inCell(row, col).addColumnAfter().run())} />
-                  <MenuItem icon={Trash2} label="Delete column" danger disabled={map.width === 1} onClick={run(() => inCell(row, col).deleteColumn().run())} />
-                  <MenuItem icon={Trash2} label="Delete table" danger onClick={run(() => inCell(0, 0).deleteTable().run())} />
+                  <div className={phone ? 'sheetGrid grid-cols-4' : 'contents'}>
+                    <MenuItem phone={phone} icon={ArrowLeftToLine} label="Insert column left" shortLabel="Left" onClick={run(() => inCell(row, col).addColumnBefore().run())} />
+                    <MenuItem phone={phone} icon={ArrowRightToLine} label="Insert column right" shortLabel="Right" onClick={run(() => inCell(row, col).addColumnAfter().run())} />
+                    <MenuItem phone={phone} icon={Trash2} label="Column" danger disabled={map.width === 1} onClick={run(() => inCell(row, col).deleteColumn().run())} />
+                    <MenuItem phone={phone} icon={Trash2} label="Table" danger onClick={run(() => inCell(0, 0).deleteTable().run())} />
+                  </div>
                 </>
               );
             }}

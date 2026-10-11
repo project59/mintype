@@ -21,8 +21,3 @@ export async function getItem(key) {
   const db = await getDB();
   return db.get(STORE, key);
 }
-
-export async function clearStore() {
-  const db = await getDB();
-  await db.clear(STORE);
-}

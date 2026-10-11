@@ -39,9 +39,9 @@ const SuggestionList = forwardRef(({ items, loading, command, label, emptyText, 
     <div
       role="listbox"
       aria-label={label}
-      className="max-h-72 w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+      className="dropdownPanel !static !w-[min(18rem,calc(100vw-2rem))] max-h-72 overflow-y-auto"
     >
-      <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+      <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500">
         {label}
       </p>
       {items.length ? items.map((item, index) => (
@@ -51,17 +51,16 @@ const SuggestionList = forwardRef(({ items, loading, command, label, emptyText, 
           type="button"
           role="option"
           aria-selected={index === selectedIndex}
+          data-active={index === selectedIndex ? '' : undefined}
           onMouseDown={(event) => event.preventDefault()}
           onMouseEnter={() => setSelectedIndex(index)}
           onClick={() => select(index)}
-          className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm text-gray-800 dark:text-gray-100 ${
-            index === selectedIndex ? 'bg-gray-100 dark:bg-zinc-800' : ''
-          }`}
+          className="dropdownItem w-full text-left"
         >
           {renderItem(item)}
         </button>
       )) : (
-        <p className="px-2.5 py-1.5 text-sm text-gray-400 dark:text-zinc-500">
+        <p className="px-2 py-1.5 text-gray-400 dark:text-slate-500">
           {loading ? 'Searching…' : emptyText}
         </p>
       )}

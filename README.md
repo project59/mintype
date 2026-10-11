@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="https://mintype.app">Open Mintype</a> ·
+  <a href="docs/README.md">Docs</a> ·
   <a href="https://github.com/project59/mintype/discussions">Discussions</a> ·
   <a href="https://github.com/orgs/project59/projects/1">Roadmap</a> ·
   <a href="https://discord.gg/JyJH5seZqj">Discord</a> ·
@@ -36,6 +37,8 @@ See the full [v2.0 release notes](https://github.com/project59/mintype/discussio
 - Notes are encrypted before they reach Google Drive. Open your Drive folder and you will see ciphertext.
 - Mark a page as **sensitive** to require your password again before it opens. This helps if you leave your device unattended.
 - QuickShare links carry their decryption key in the part of the URL that never reaches a server. Mintype only stores the encrypted file.
+
+The [privacy and security docs](docs/security-overview.md) explain exactly how this works, what is stored where, and what Mintype does not protect against.
 
 ### ✍️ Documents
 

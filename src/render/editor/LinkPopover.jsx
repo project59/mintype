@@ -203,7 +203,7 @@ const LinkPopover = ({ editor, children }) => {
             ref={panelRef}
             role="dialog"
             aria-label="Edit link"
-            className="fixed z-[10000] w-[min(18rem,calc(100vw-1rem))] rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+            className="fixed z-[10000] w-[min(18rem,calc(100vw-1rem))] rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-zinc-700 dark:bg-slate-900"
             style={{ top: link.top, left: link.left }}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => {
@@ -218,7 +218,7 @@ const LinkPopover = ({ editor, children }) => {
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 placeholder="Paste or type a link"
-                className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-100"
+                className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100"
               />
               <button
                 type="submit"
@@ -233,7 +233,7 @@ const LinkPopover = ({ editor, children }) => {
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={navigate}
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800"
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
                 >
                   <ExternalLink size={13} />
                   Open link
@@ -258,7 +258,7 @@ const LinkPopover = ({ editor, children }) => {
                   title="Close"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={close}
-                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800"
                 >
                   <X size={14} />
                 </button>

@@ -56,6 +56,7 @@ print("python")
 | :--- | :---: | ---: |
 | 1 | two words | 3 |
 | A longer cell that wraps | b | c |
+|  |  |  |
 
 :::section[Open **section** title]{color=green open}
 Section body with text that wraps onto a second line inside the section

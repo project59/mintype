@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { performSearch } from './searchUtils';
 
-export function useSearch(db, workspaceId = null) {
+export function useSearch(workspaceId = null) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const debounceRef = useRef(null);
 
-    const search = useCallback(async (searchQuery) => {
-        if (!db || !searchQuery || searchQuery.length < 2) {
+    const search = useCallback((searchQuery) => {
+        if (!searchQuery || searchQuery.length < 2) {
             setResults([]);
             setHasSearched(false);
             return;
@@ -17,7 +17,7 @@ export function useSearch(db, workspaceId = null) {
 
         setIsSearching(true);
         try {
-            const searchResults = await performSearch(db, searchQuery, workspaceId);
+            const searchResults = performSearch(searchQuery, workspaceId);
             setResults(searchResults);
             setHasSearched(true);
         } catch (error) {
@@ -26,7 +26,7 @@ export function useSearch(db, workspaceId = null) {
         } finally {
             setIsSearching(false);
         }
-    }, [db, workspaceId]);
+    }, [workspaceId]);
 
     const debouncedSearch = useCallback((searchQuery) => {
         if (debounceRef.current) {

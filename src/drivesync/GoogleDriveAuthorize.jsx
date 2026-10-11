@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useGoogleDrive } from './GoogleDriveContext.jsx';
 import StatusChip from '../components/common/StatusChip.jsx'
 import { useOnlineStatus } from '../layouts/root/OnlineStatusContext.jsx';
@@ -20,6 +22,17 @@ const GoogleDriveAuthorize = () => {
     const { keyMismatch } = useSync();
 
     const isOnline = useOnlineStatus();
+
+    const [configuring, setConfiguring] = useState(false);
+
+    const handleConfigure = async () => {
+        setConfiguring(true);
+        try {
+            await ensureAppFolder();
+        } finally {
+            setConfiguring(false);
+        }
+    };
 
     if (!isOnline) {
         return (
@@ -66,8 +79,13 @@ const GoogleDriveAuthorize = () => {
                                 <p className="textRegular max-w-md">
                                     One more step 👉 This will create or find a Mintype folder and metadata file in your Google Drive to complete setup
                                 </p>
-                                <button className="btnPrimary w-fit" onClick={ensureAppFolder}>
-                                    Configure Google Drive
+                                <button
+                                    className="btnPrimary w-fit gap-2"
+                                    disabled={configuring}
+                                    onClick={handleConfigure}
+                                >
+                                    {configuring && <Loader2 className="animate-spin" size={14} />}
+                                    {configuring ? 'Configuring...' : 'Configure Google Drive'}
                                 </button>
                             </div>
                         )}

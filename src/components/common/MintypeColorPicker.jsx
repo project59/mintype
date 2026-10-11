@@ -268,7 +268,7 @@ export default function MintypeColorPicker({ hideRow1 = false, icon = null, valu
                     sheetClassName="px-4 pt-4"
                 >
                     {({ close: closePopover, phone }) => (phone ? renderPalette(closePopover, true) : (
-                        <div className="w-fit rounded-xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+                        <div className="w-fit rounded-xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-zinc-700 dark:bg-slate-900">
                             {renderPalette(closePopover)}
                         </div>
                     ))}

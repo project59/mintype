@@ -1,7 +1,6 @@
 // components/SearchBar.jsx
 import React, { useContext, useEffect, useState } from 'react';
 import { useSearch } from '../../lib/useSearch';
-import dbService from '../../lib/dbService';
 import { clearSearchIndex, initializeSearchIndex } from '../../lib/searchUtils';
 import { Button, Dialog, DialogBackdrop, DialogPanel, Input } from '@headlessui/react';
 import { Search, X } from 'lucide-react';
@@ -12,7 +11,6 @@ const RESULT_TYPE_LABELS = { page_title: 'Title', document: 'Document', whiteboa
 
 export function SearchBar({ workspaceId = null, }) {
     const [isInitializing, setIsInitializing] = useState(true);
-    const [db, setDb] = useState(null);
     const navigate = useNavigate();
     let [isOpen, setIsOpen] = useState(false)
     const { masterKey } = useContext(SecureContext);
@@ -27,24 +25,18 @@ export function SearchBar({ workspaceId = null, }) {
         clearIndexes();
     }
 
-    useEffect(() => {
-        initializeDB();
-    }, []);
-
-    const initializeDB = async () => {
-        const database = await dbService.initializeDB();
-        setDb(database);
-    };
-
     const initializeSearch = async () => {
-        await initializeSearchIndex(db, masterKey);
+        await initializeSearchIndex(masterKey);
         setIsInitializing(false);
     };
 
-    const clearIndexes = async () => {
-        await clearSearchIndex(db);
+    const clearIndexes = () => {
+        clearSearchIndex();
         setIsInitializing(true);
     };
+
+    // Locking the app unmounts this, so the readable index never outlives an unlocked session.
+    useEffect(() => clearSearchIndex, []);
 
     const {
         query,
@@ -54,7 +46,7 @@ export function SearchBar({ workspaceId = null, }) {
         handleQueryChange,
         handleEnterKey,
         clearSearch
-    } = useSearch(db, workspaceId);
+    } = useSearch(workspaceId);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {

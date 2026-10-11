@@ -57,13 +57,6 @@ export const initializeDB = async () => {
                     db.createObjectStore("workspacemeta", { keyPath: "id" });
                     db.createObjectStore("pagedata", { keyPath: "id" });
                     db.createObjectStore("syncqueue", { keyPath: "id" });
-                    const searchStore = db.createObjectStore("searchIndex", { keyPath: "id" });
-                    searchStore.createIndex('content', 'content');
-                    searchStore.createIndex('pageId', 'pageId');
-                    searchStore.createIndex('rootId', 'rootId');
-                    searchStore.createIndex('type', 'type');
-                    searchStore.createIndex('compound', ['rootId', 'pageId']);
-
                 }
 
                 // Future versions can be added here
@@ -73,10 +66,6 @@ export const initializeDB = async () => {
                     const metaStore = transaction.objectStore("workspacemeta");
                     pageDataStore.createIndex('id', 'id', { unique: false });
                     metaStore.createIndex('rootId', 'rootId', { unique: false })
-                }
-
-                if (oldVersion < 4 && db.objectStoreNames.contains('history')) {
-                    db.deleteObjectStore('history');
                 }
 
                 // Deleted page IDs with their deletion time, so deletions sync instead of being

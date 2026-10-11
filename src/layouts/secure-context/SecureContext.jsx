@@ -1,6 +1,6 @@
 // context/SecureContext.jsx
 import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
-import { getItem, setItem, clearStore } from "./dbUtils";
+import { getItem, setItem } from "./dbUtils";
 import {
   deriveKEK,
   generateMasterKey,
@@ -13,7 +13,6 @@ import SetupDialog from "./SetupDialog";
 import toast from "react-hot-toast";
 import RecoveryKeyDialog from "./RecoveryKeyDialog";
 import { hasLocalSetup, unwrapMasterKey } from "./localKey";
-import dbService from "../../lib/dbService";
 import { buildLocalBundle, reconcileAccountKey, rememberKeyCheck, setWrappedAt } from "../../lib/keyBundle";
 import { useSupabaseAuth } from "../auth/SupabaseAuthProvider.jsx";
 
@@ -223,15 +222,6 @@ export default function SecureProvider({ children }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleReset = async () => {
-    await clearStore();
-    await dbService.clearNotes();
-    await dbService.clearSyncQueue();
-    setReady(false);
-    setSetupNeeded(true);
-    setMasterKey(null);
-  };
-
   const handleLockApp = () => {
     setMasterKey(null);
     setReady(false);
@@ -286,7 +276,6 @@ export default function SecureProvider({ children }) {
     handleSetup,
     handleLogin,
     handleChangePassword,
-    handleReset,
     handleExport,
     accountKeyStatus,
     syncAccountKey,

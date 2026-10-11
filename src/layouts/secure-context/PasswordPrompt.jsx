@@ -24,6 +24,7 @@ export default function PasswordPrompt({ onSubmit }) {
                     <input
                         type="password"
                         className="baseInput"
+                        tabIndex={4}
                         data-autofocus
                         value={password}
                         onKeyDown={handleKeyDown}
@@ -48,11 +49,13 @@ export default function PasswordPrompt({ onSubmit }) {
                         </button>
                     </div>
 
+                    {/* A full page load, so this page's database connections don't hold up the reset. */}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                        Forgot both your password and recovery key, or can't unlock? <a tabIndex={3} href="/reset" className="underline">Reset</a>
+                    </p>
+
                 </DialogPanel>
-
-
             </div>
-
         </Dialog>
     );
 }

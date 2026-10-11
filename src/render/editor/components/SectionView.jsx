@@ -79,7 +79,7 @@ const SectionView = ({ node, editor, getPos, updateAttributes, deleteNode }) => 
           <PopoverPanel
             portal
             anchor={{ to: 'bottom end', gap: '6px', padding: '12px' }}
-            className="z-50 flex gap-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+            className="z-50 flex gap-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-slate-900"
           >
             {({ close }) => SECTION_COLORS.map((option) => (
               <button
@@ -93,7 +93,7 @@ const SectionView = ({ node, editor, getPos, updateAttributes, deleteNode }) => 
                   updateAttributes({ color: option.value });
                   close();
                 }}
-                className="relative flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+                className="relative flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
               >
                 <ColorSwatch color={option} className="h-4 w-4" />
                 {option.value === color.value && (

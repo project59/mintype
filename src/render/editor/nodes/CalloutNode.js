@@ -2,9 +2,8 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { reactNodeView } from './reactNodeView.js';
 import CalloutView from '../components/CalloutView.jsx';
 import {
-  CALLOUT_BOX_CLASS, CALLOUT_ICON_SIZE, CALLOUT_ROW_CLASS, calloutIconSlotClass, getCalloutType,
+  CALLOUT_BOX_CLASS, CALLOUT_CONTENT_CLASS, CALLOUT_EMOJI_SLOT_CLASS, CALLOUT_ROW_CLASS, calloutEmoji, getCalloutType,
 } from './calloutTypes.js';
-import { iconSpec } from './blockStyles.js';
 import { containerDirectiveTokenizer, parseContainerChildren, renderContainerDirective } from '../markdown/directives.js';
 
 const CALLOUT_TYPE_VALUES = ['info', 'warning', 'error', 'success', 'default'];
@@ -34,11 +33,10 @@ export const CalloutNode = Node.create({
     return [{ tag: 'div[data-callout-type]', contentElement: '.callout-content' }];
   },
 
-  // Laid out like CalloutView (minus its floating type picker) so static views match the editor.
+  // Laid out like CalloutView, whose emoji is a button opening the type picker.
   renderHTML({ node, HTMLAttributes }) {
-    const { emoji, type } = node.attrs;
+    const { type } = node.attrs;
     const calloutType = getCalloutType(type);
-    const icon = emoji || iconSpec(calloutType.icon, CALLOUT_ICON_SIZE);
     return [
       'div',
       mergeAttributes(HTMLAttributes, {
@@ -47,9 +45,9 @@ export const CalloutNode = Node.create({
       }),
       [
         'div',
-        { class: CALLOUT_ROW_CLASS, style: 'display: flex; align-items: flex-start; gap: 0.75rem;' },
-        ['span', { 'aria-hidden': 'true', class: calloutIconSlotClass(calloutType) }, icon],
-        ['div', { class: 'callout-content', style: 'min-width: 0; flex: 1;' }, 0],
+        { class: CALLOUT_ROW_CLASS, style: 'display: flex; align-items: flex-start; gap: 0.5rem;' },
+        ['span', { 'aria-hidden': 'true', class: CALLOUT_EMOJI_SLOT_CLASS }, calloutEmoji(node.attrs)],
+        ['div', { class: CALLOUT_CONTENT_CLASS, style: 'min-width: 0; flex: 1;' }, 0],
       ],
     ];
   },

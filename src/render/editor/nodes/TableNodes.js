@@ -21,9 +21,11 @@ const cellText = (helpers, cell) => helpers.renderChildren(cell.content || [])
   .replace(/\n/g, ' ')
   .replace(/\|/g, '\\|');
 
-// A cell's single paragraph shouldn't add the editor's paragraph spacing. Header cells are
-// left-aligned like the rest of their column unless an alignment is set (browsers center <th>).
-const cellOptions = (parent, className = '') => ({ ...parent, HTMLAttributes: { class: `[&>p]:!mb-0 ${className}`.trim() } });
+// A cell's single paragraph shouldn't add the editor's paragraph spacing, and keeps one line of
+// height when empty: the editor fills empty paragraphs with a <br>, static HTML leaves them bare.
+// Header cells are left-aligned like the rest of their column unless an alignment is set
+// (browsers center <th>).
+const cellOptions = (parent, className = '') => ({ ...parent, HTMLAttributes: { class: `[&>p]:!mb-0 [&>p]:min-h-[1lh] ${className}`.trim() } });
 
 const cellAttributes = {
   align: {

@@ -1,15 +1,27 @@
 import { useState } from 'react';
-import { Edit, MapPin, X } from 'lucide-react';
-import { getGoogleMapsEmbedUrl } from '../mapsUtils.js';
+import { Edit, Loader2, MapPin, X } from 'lucide-react';
+import { getGoogleMapsEmbedUrl, isShortMapsLink, resolveShortMapsLink } from '../mapsUtils.js';
 
 const MapsView = ({ node, updateAttributes, deleteNode }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [url, setUrl] = useState(node.attrs.url || '');
+  const [resolving, setResolving] = useState(false);
+  const [resolveFailed, setResolveFailed] = useState(false);
   const embedUrl = getGoogleMapsEmbedUrl(node.attrs.url);
 
-  const handleSave = () => {
-    if (!getGoogleMapsEmbedUrl(url)) return;
-    updateAttributes({ url: url.trim() });
+  // Short links are stored as the full URL they point to, so the block never needs resolving again.
+  const handleSave = async () => {
+    if (resolving) return;
+    let fullUrl = url.trim();
+    if (isShortMapsLink(fullUrl)) {
+      setResolving(true);
+      fullUrl = await resolveShortMapsLink(fullUrl);
+      setResolving(false);
+      setResolveFailed(!fullUrl);
+    }
+    if (!getGoogleMapsEmbedUrl(fullUrl)) return;
+    updateAttributes({ url: fullUrl });
+    setUrl(fullUrl);
     setIsEditing(false);
   };
 
@@ -28,15 +40,23 @@ const MapsView = ({ node, updateAttributes, deleteNode }) => {
           <input
             type="url"
             value={url}
-            onChange={(event) => setUrl(event.target.value)}
+            onChange={(event) => {
+              setUrl(event.target.value);
+              setResolveFailed(false);
+            }}
             onKeyDown={(event) => event.key === 'Enter' && handleSave()}
             placeholder="Paste a Google Maps URL"
             aria-label="Google Maps URL"
             className="baseInput flex-1"
           />
-          <button type="button" onClick={handleSave} className="btnPrimarySm">Save</button>
+          <button type="button" onClick={handleSave} disabled={resolving} className="btnPrimarySm gap-1.5">
+            {resolving && <Loader2 className="animate-spin" size={12} />}
+            Save
+          </button>
         </div>
-        {url && !getGoogleMapsEmbedUrl(url) && (
+        {resolveFailed ? (
+          <p className="mt-2 text-xs text-rose-500">Could not open this share link. Open it and paste the full address from your browser instead.</p>
+        ) : url && !isShortMapsLink(url) && !getGoogleMapsEmbedUrl(url) && (
           <p className="mt-2 text-xs text-rose-500">Enter a valid Google Maps URL.</p>
         )}
       </div>

@@ -14,6 +14,9 @@ import { useEditorContext } from './EditorContext.jsx';
 import { blockCommands } from './blockCommands.js';
 import { OPEN_LINK_EDITOR_EVENT } from './LinkPopover.jsx';
 
+// Popover buttons have no Headless `data-active` state, so dropdownItem's highlight is added on hover.
+const POPOVER_ITEM_CLASS = 'dropdownItem text-left hover:bg-gray-200 dark:hover:bg-slate-800';
+
 const ToolbarButton = ({ icon: Icon, isActive, onClick, title }) => (
   <div
     onMouseDown={(e) => {
@@ -53,7 +56,7 @@ const BlockMenu = ({ onInsert }) => {
           </PopoverButton>
           <ResponsivePopoverPanel
             anchor={{ to: 'top start', gap: '12px', padding: '12px' }}
-            className="z-50"
+            className="dropdownPanel max-h-[min(20rem,80dvh)] overflow-y-auto"
           >
             {({ close, phone }) => (phone ? (
               <div role="menu" aria-label="Block types" className="sheetGrid grid-cols-1">
@@ -75,17 +78,13 @@ const BlockMenu = ({ onInsert }) => {
                 ))}
               </div>
             ) : (
-              <div
-                role="menu"
-                aria-label="Block types"
-                className="grid max-h-[min(20rem,80dvh)] min-w-52 grid-cols-1 gap-1 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
-              >
+              <div role="menu" aria-label="Block types" className="contents">
                 {addBlockCommands.map((command) => (
                   <button
                     key={command.id}
                     type="button"
                     role="menuitem"
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800"
+                    className={POPOVER_ITEM_CLASS}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => {
                       onInsert(command);
@@ -125,7 +124,7 @@ const Dropdown = ({ options, value, onChange, icon, title, type = null, sheetCol
       </PopoverButton>
       <ResponsivePopoverPanel
         anchor={{ to: 'top start', gap: '12px', padding: '12px' }}
-        className="z-[9999]"
+        className="dropdownPanel !z-[9999] max-h-[min(15rem,80dvh)] overflow-y-auto"
       >
         {({ close, phone }) => (phone ? (
           <div aria-label={title} className={`sheetGrid ${sheetColumns}`}>
@@ -146,14 +145,12 @@ const Dropdown = ({ options, value, onChange, icon, title, type = null, sheetCol
             ))}
           </div>
         ) : (
-          <div className="min-w-40 max-h-[min(15rem,80dvh)] overflow-y-auto rounded-xl shadow-lg bg-white dark:bg-zinc-900 p-1.5 flex flex-col border border-gray-200 dark:border-zinc-800">
+          <div className="contents">
             {options?.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                className={`dropdownItem text-sm p-2 rounded text-left ${
-                  value === option.value ? '!text-blue-600' : ''
-                } hover:bg-gray-100 dark:hover:bg-zinc-800`}
+                className={`${POPOVER_ITEM_CLASS} ${value === option.value ? '!text-blue-600' : ''}`}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   onChange(option.value);

@@ -15,7 +15,7 @@ export default function NewPageDropdown({ rootId, quickNote = false }) {
             <MenuItems
                 transition
                 anchor="bottom end"
-                className="w-48 p-1 rounded-lg text-sm absolute z-50 dark:bg-zinc-900 bg-white border border-gray-400/20 flex flex-col gap-1 mt-2"
+                className="dropdownPanel mt-2"
             >
                 <MenuItem>
                     <button

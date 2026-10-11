@@ -6,9 +6,7 @@ import { renderSuggestionList } from './suggestionMenu.js';
 
 const renderCommand = ({ icon: Icon, label }) => (
   <>
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-500 dark:border-zinc-700 dark:text-zinc-400">
-      <Icon size={14} />
-    </span>
+    <Icon size={14} className="shrink-0" />
     <span className="truncate">{label}</span>
   </>
 );

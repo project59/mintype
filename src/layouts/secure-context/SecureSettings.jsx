@@ -1,22 +1,22 @@
 import { useContext, useState } from "react";
 import { SecureContext } from "./SecureContext";
 import SettingsSkeleton from "../settings/SettingsSkeleton";
-import ResetAppModal from "./ResetAppModal";
 import { Key } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function SecureSettings() {
-    const { handleChangePassword, handleReset, handleExport } =
+    const { handleChangePassword, handleExport } =
         useContext(SecureContext);
     const [oldPass, setOldPass] = useState("");
     const [newPass, setNewPass] = useState("");
     const [usingRec, setUsingRec] = useState(false)
-    const [showResetDialog, setShowResetDialog] = useState(false);
 
     return (
         <SettingsSkeleton title="Security and Recovery">
             <div className="space-y-8">
                 <p className="textRegular">
                     Mintype encrypts your notes locally on your device to keep them safe. <br /> No one else can access your notes without your password or recovery key.
+                    {" "}<Link to="/docs/security-overview" className="underline text-indigo-500">Learn how it works</Link>.
                 </p>
                 <div className="w-full md:max-w-md space-y-2">
                     <h4 className="textTitle">Change Password</h4>
@@ -60,29 +60,22 @@ export default function SecureSettings() {
 
                 <div className="space-y-2 max-w-md">
                     <h4 className="textTitle">Reset Mintype</h4>
-                    <p className="textRegular">Clear your local keys and notes on this device. You can do this if you want to start a new setup, or import another key.</p>
+                    <p className="textRegular">Erase everything Mintype has stored on this device and start again as a new or returning user. Use this to start a new setup, switch to another key, or fix a device where Mintype has stopped working.</p>
                     <div className="infoBox">
                         <p className="textTitle">Warning</p>
-                        This action will remove all your notes from this device. It will also clear any queued notes which have not been synced yet.
-                        Make sure you have exported a local copy of your notes or synced them to Google Drive.
-                        <br />
-                        <br />
-                        Make sure you have exported the key budle as well if you wish to recover your notes.
+                        This removes all notes, keys and settings from this device, including changes that have not synced to Google Drive yet, and signs this device out.
+                        Export your notes and your key bundle, or let sync finish, before you reset.
                         <br />
                         <br />
                         This action cannot be undone.
                     </div>
 
-                    <button className="btnPrimary" onClick={() => setShowResetDialog(true)}>
+                    {/* A full page load, so the app's open database connections don't hold up the reset. */}
+                    <a href="/reset" className="btnPrimary w-fit">
                         Reset Mintype
-                    </button>
+                    </a>
                 </div>
             </div>
-            <ResetAppModal
-                isDialogOpen={showResetDialog}
-                onClose={() => setShowResetDialog(false)}
-                onConfirm={handleReset}
-            />
         </SettingsSkeleton>
     );
 }

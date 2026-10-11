@@ -281,11 +281,20 @@ const MarkdownShapeEditor = ({ shape, tldrawEditor, contentRef }) => {
         editor.commands.setContent(shape.props.markdown || '', { contentType: 'markdown', emitUpdate: false });
     }, [editor, shape.props.markdown]);
 
+    // Menus and sheets opened from the editor are portaled out of the canvas in the DOM, but React
+    // still bubbles their events through it. tldraw's canvas cancels touchstart/touchend, which
+    // stops a tap from becoming a click, so their touches must not reach it.
+    const stopPortaledTouch = (event) => {
+        if (!event.currentTarget.contains(event.target)) event.stopPropagation();
+    };
+
     return (
         <MarkdownShapeBody
             contentRef={contentRef}
             autoHeight
             onPointerDown={(event) => event.stopPropagation()}
+            onTouchStart={stopPortaledTouch}
+            onTouchEnd={stopPortaledTouch}
             onKeyDownCapture={(event) => {
                 if (event.key === 'Escape') {
                     event.preventDefault();

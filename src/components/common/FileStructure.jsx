@@ -354,7 +354,7 @@ const QuickNotesDropZone = ({ rootId }) => {
         >
             {isOverQuickNotes && (
                 <div className="h-8 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-md text-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
-                    Move to Quick Notes
+                    Move here
                 </div>
             )}
         </div>
@@ -366,14 +366,18 @@ const QuickNotesDropZone = ({ rootId }) => {
 // window-level capture listeners that preventDefault any drop carrying
 // text/html or text/plain data, which would make ProseMirror ignore all
 // editor drag-and-drop.
+// The tree is mounted twice (desktop sidebar and mobile drawer). DndProvider otherwise shares one
+// manager per window, so the drawer would reuse the sidebar's backend, whose root is hidden on
+// phones; a context object per instance gives each tree its own manager and backend root.
 const FileStructureWithDnd = () => {
     const { workspaceId } = useParams();
     const [dndRoot, setDndRoot] = useState(null);
+    const [dndContext] = useState(() => ({}));
 
     return (
         <div ref={setDndRoot} className="contents">
             {dndRoot && (
-                <DndProvider backend={HTML5Backend} options={{ rootElement: dndRoot }}>
+                <DndProvider backend={HTML5Backend} context={dndContext} options={{ rootElement: dndRoot }}>
                     <FileStructureContent rootId={workspaceId} />
                 </DndProvider>
             )}

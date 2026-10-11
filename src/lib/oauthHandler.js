@@ -33,8 +33,6 @@ export class OAuthHandler {
                     return;
                 }
 
-                console.log('Received message:', event.data);
-
                 if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
                     messageReceived = true;
                     window.removeEventListener('message', messageHandler);
@@ -99,10 +97,7 @@ export class OAuthHandler {
             }
 
             // Wait for tokens
-            const tokens = await this.waitForAuthCallback(popup);
-
-            // console.log('Authorization complete, tokens:', tokens);
-            return tokens;
+            return await this.waitForAuthCallback(popup);
         } catch (error) {
             console.error('Authorization failed:', error);
             throw error;
