@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, ChevronDown, Github } from 'lucide-react';
 import StaticMarkdownRenderer from '../../render/shared/read-only/StaticMarkdownRenderer.jsx';
 import ThemeToggleBtn from '../../components/common/ThemeToggleBtn.jsx';
 import { SOURCE_URL, adjacentDocs, docPath, docsNav, getDoc, headingId, resolveDocHref } from './docsContent.js';
+import useDocumentMeta from '../../utils/useDocumentMeta.js';
 
 function DocsNav({ onNavigate }) {
     return (
@@ -59,13 +60,12 @@ export default function DocsPage() {
     const doc = getDoc(slug);
     const { previous, next } = adjacentDocs(slug);
 
-    useEffect(() => {
-        const previousTitle = document.title;
-        document.title = doc?.slug ? `${doc.title} · Mintype Docs` : 'Mintype Docs';
-        return () => {
-            document.title = previousTitle;
-        };
-    }, [doc]);
+    useDocumentMeta({
+        title: doc?.slug ? `${doc.title} · Mintype Docs` : 'Mintype Docs',
+        description: doc?.description,
+        path: doc ? docPath(doc.slug) : null,
+        noindex: !doc,
+    });
 
     // The Markdown is written for GitHub, so headings get GitHub's anchors and relative links are
     // pointed at the matching doc or repository file once the page is rendered.

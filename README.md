@@ -136,6 +136,7 @@ VITE_SUPABASE_ANON_KEY=placeholder
 VITE_BACKEND_URL=
 VITE_FRONTEND_URL=http://localhost:5173
 VITE_API_KEY=
+VITE_TLDRAW_LICENSE_KEY=
 ```
 
 | Variable | Used for |
@@ -144,6 +145,7 @@ VITE_API_KEY=
 | `VITE_BACKEND_URL` | The Mintype API server, used by Drive token refresh, key backup, profile settings, and QuickShare. |
 | `VITE_FRONTEND_URL` | Where Google sign-in redirects back to, usually your dev server URL. |
 | `VITE_API_KEY` | Google API key for Drive sync. |
+| `VITE_TLDRAW_LICENSE_KEY` | tldraw license for whiteboards on a deployed site; each deployment (dev site, production) sets its own key. Not needed on `localhost`. |
 
 Everything else works without a backend: creating a password, writing documents and whiteboards, search, and import/export all happen in the browser.
 

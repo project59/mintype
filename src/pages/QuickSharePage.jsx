@@ -7,6 +7,7 @@ import { decryptSharedPage, readShareKey } from "../components/quickshare/shareC
 import { validSharePayload } from "../components/quickshare/sharePayload.js";
 import SaveToWorkspaceDialog from "../components/quickshare/SaveToWorkspaceDialog.jsx";
 import { hasLocalSetup } from "../layouts/secure-context/localKey.js";
+import useDocumentMeta from "../utils/useDocumentMeta.js";
 
 // Loaded only for whiteboard links, so document links never download the canvas runtime.
 const ReadOnlyWhiteboard = lazy(() => import("../render/whiteboard/ReadOnlyWhiteboard.jsx"));
@@ -77,14 +78,10 @@ export default function QuickSharePage() {
         };
     }, [shareId, hash]);
 
-    useEffect(() => {
-        if (!page) return undefined;
-        const previousTitle = document.title;
-        document.title = `${page.meta.name || 'Untitled Page'} · Mintype`;
-        return () => {
-            document.title = previousTitle;
-        };
-    }, [page]);
+    useDocumentMeta({
+        title: page ? `${page.meta.name || 'Untitled Page'} · Mintype` : null,
+        noindex: true,
+    });
 
     if (loading) {
         return (

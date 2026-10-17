@@ -7,6 +7,7 @@ import DoodleHero from "../layouts/homepage/DoodleHero.jsx";
 import Vignettes from "../layouts/homepage/Vignettes.jsx";
 import PixelScene from "../layouts/homepage/PixelScene.jsx";
 import { DrawnPath, HandNote, useInView } from "../layouts/homepage/doodles.jsx";
+import useDocumentMeta from "../utils/useDocumentMeta.js";
 
 const PROMISES = [
     {
@@ -156,6 +157,7 @@ const FOOTER_LINKS = [
 
 export default function DefaultHome() {
     const navigate = useNavigate();
+    useDocumentMeta({ path: "/" });
     const checkMk = async () => {
         const mk = await getItem("master_key_enc");
         if (mk) {
@@ -177,14 +179,14 @@ export default function DefaultHome() {
                         <img className="h-5" src="favicon.svg" alt="logo" />
                         <p className="font-semibold text-xl text-black dark:text-white">Mintype</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <Link to="/docs" className="mr-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                    <div className="flex items-center gap-2">
+                        <Link to="/docs" className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
                             Docs
                         </Link>
+                        <ThemeToggleBtn />
                         <a href="https://github.com/project59/mintype" className="text-xs rounded-full bg-blue-500 p-1 px-1.5 text-white font-medium">
                             v2.0
                         </a>
-                        <ThemeToggleBtn />
                     </div>
                 </nav>
             </header>

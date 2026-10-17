@@ -142,20 +142,8 @@ export default function DoodleHero() {
 
             {/* Headline */}
             <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-4 text-center">
-                <p className="font-['Playpen_Sans'] text-sm text-gray-500 dark:text-gray-400 mt-16 md:mt-0 mb-4 rotate-[-2deg]">
-                    notes · whiteboards · encrypted
-                </p>
-                <h1 className="text-5xl md:text-7xl font-semibold tracking-tight text-gray-900 dark:text-white max-w-3xl leading-[1.05]">
-                    Where{" "}
-                    <span className="relative inline-block dark:text-gray-900">
-                        <svg className="absolute -inset-x-2 -inset-y-1 -z-10 w-[calc(100%+1rem)] h-[calc(100%+0.5rem)]" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden>
-                            <path d="M4 34 C 50 26, 120 24, 196 30 M 6 42 C 70 36, 140 38, 194 40" stroke="#afffc7" strokeWidth="26" strokeLinecap="round" fill="none" pathLength="1" strokeDasharray="1" strokeDashoffset="1">
-                                <animate attributeName="stroke-dashoffset" from="1" to="0" dur="0.7s" begin="0.3s" fill="freeze" />
-                            </path>
-                        </svg>
-                        messy
-                    </span>{" "}
-                    ideas<br />get good.
+                <h1 className="mt-16 md:mt-0 text-5xl md:text-7xl font-semibold tracking-tight text-gray-900 dark:text-white max-w-3xl leading-[1.05] text-balance">
+                    A space for your best ideas
                 </h1>
                 <p className="mt-6 max-w-md text-base text-gray-600 dark:text-gray-400">
                     Documents and an infinite whiteboard, encrypted on your device. Free, offline, and synced to your own Google Drive.
