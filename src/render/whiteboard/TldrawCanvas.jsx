@@ -43,6 +43,7 @@ import { buildExtensions } from '../editor/extensions.js';
 import { ExternalToolbar } from '../editor/EditorToolbar.jsx';
 import LinkPopover from '../editor/LinkPopover.jsx';
 import { MarkdownShapeBody, MarkdownShapeFrame, MarkdownShapeUtilBase, StaticMarkdownShapeBody } from './markdownShape.jsx';
+import { TLDRAW_ASSET_URLS } from './tldrawAssets.js';
 import { TLDRAW_LICENSE_KEY } from './tldrawLicense.js';
 import { MARKDOWN_SHAPE_TYPE } from '../../utils/constants.js';
 import { useTheme } from '../../utils/theme.js';
@@ -293,6 +294,13 @@ const MarkdownShapeEditor = ({ shape, tldrawEditor, contentRef }) => {
             contentRef={contentRef}
             autoHeight
             onPointerDown={(event) => event.stopPropagation()}
+            // Keep the browser's context menu (spelling fixes, clipboard) while editing. tldraw opens
+            // its own menu from the canvas on a right-button pointerup, and from Radix's contextmenu
+            // handler, so neither event may reach them.
+            onPointerUp={(event) => {
+                if (event.button === 2) event.stopPropagation();
+            }}
+            onContextMenu={(event) => event.stopPropagation()}
             onTouchStart={stopPortaledTouch}
             onTouchEnd={stopPortaledTouch}
             onKeyDownCapture={(event) => {
@@ -353,6 +361,7 @@ export default function TldrawCanvas({ snapshot, onMount, seedInitialScene = fal
         <div className={`isolate ${className}`}>
             <Tldraw
                 licenseKey={TLDRAW_LICENSE_KEY}
+                assetUrls={TLDRAW_ASSET_URLS}
                 snapshot={snapshot || undefined}
                 shapeUtils={shapeUtils}
                 maxAssetSize={MAX_ASSET_SIZE}

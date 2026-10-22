@@ -3,11 +3,15 @@ import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import MintypeSetupLogin from "../../drivesync/MintypeSetupLogin";
-import { BadgePlus, Import, Upload, X } from "lucide-react";
+import { BadgePlus, Import, Loader2, Upload, X } from "lucide-react";
 import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
+import { MIN_PASSWORD_LENGTH } from "./secureUtils";
 
 export default function SetupDialog({ onSetup }) {
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [creating, setCreating] = useState(false);
     const [mode, setMode] = useState("select"); // "new" or "import"
     const [importFile, setImportFile] = useState(null);
     const { user } = useSupabaseAuth();
@@ -33,17 +37,22 @@ export default function SetupDialog({ onSetup }) {
         reader.readAsText(file);
     };
 
-    const handleOnSetup = () => {
-        if (mode === "new") {
-            // make sure there is a password
-            if (password === "") {
-                toast.error("Please enter a password");
-                return;
-            }
-
-            onSetup(password);
-        } else if (mode === "import") {
-            onSetup(importFile);
+    const handleCreate = async (e) => {
+        e.preventDefault();
+        if (creating) return;
+        if (password.length < MIN_PASSWORD_LENGTH) {
+            setPasswordError(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
+            return;
+        }
+        if (password !== confirmPassword) {
+            setPasswordError("The passwords don't match.");
+            return;
+        }
+        setCreating(true);
+        try {
+            await onSetup(password);
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -55,12 +64,12 @@ export default function SetupDialog({ onSetup }) {
                     <div className="flex items-center gap-3">
                         <img src="/favicon.svg" alt="logo" className="h-7" />
                         <h2 className="text-2xl md:text-3xl font-semibold">
-                            {mode === "import" ? "Import Notes" : mode === "new" ? "Set Password" : "Welcome to Mintype!"}
+                            {mode === "import" ? "Use an existing setup" : mode === "new" ? "Set Password" : mode === "success" ? "Keys restored" : "Welcome to Mintype!"}
                         </h2>
                     </div>
                     {mode === "select" && (
                         <>
-                            <div className="px-2 py-1 rounded-full bg-indigo-100 dark:bg-slate-400/20 w-fit textRegular">
+                            <div className="w-fit textRegular">
                                 Secure, private and powerful note taking
                             </div>
                             <div className="flex gap-2 pt-12">
@@ -75,7 +84,7 @@ export default function SetupDialog({ onSetup }) {
                                         New Setup <BadgePlus size={14} className="inline-block ml-1" />
                                     </button>
                                 </div>
-                                <div className="w-full flex flex-col gap-4 justify-between bg-yellow-100 dark:bg-slate-500/20 p-2 rounded-lg">
+                                <div className="w-full flex flex-col gap-4 justify-between bg-emerald-50 dark:bg-slate-500/20 p-2 rounded-lg">
                                     <div>
                                         <h4 className="font-semibold">Returning User?</h4>
                                         <p className="textRegular">
@@ -93,29 +102,51 @@ export default function SetupDialog({ onSetup }) {
                         </>
                     )}
                     {mode === "new" && (
-                        <>
+                        <form onSubmit={handleCreate} className="flex flex-col gap-3">
                             <p className="textRegular">
-                                Create a password to protect your notes. We will secure all your notes with this password. Don't worry, you can change it later.
+                                You'll enter this password to unlock Mintype on this device. Your notes are encrypted with it, so nobody, including us, can reset it for you. Next, you'll get a recovery key in case you forget it. You can change the password later in Settings.
                             </p>
                             <input
                                 type="password"
                                 className="baseInput"
+                                autoFocus
+                                autoComplete="new-password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    setPasswordError("");
+                                }}
                                 placeholder="Password"
+                                aria-describedby="password-hint"
                             />
+                            <input
+                                type="password"
+                                className="baseInput"
+                                autoComplete="new-password"
+                                value={confirmPassword}
+                                onChange={(e) => {
+                                    setConfirmPassword(e.target.value);
+                                    setPasswordError("");
+                                }}
+                                placeholder="Confirm password"
+                            />
+                            <p id="password-hint" className={`text-xs ${passwordError ? "text-red-500" : "text-gray-500 dark:text-gray-400"}`}>
+                                {passwordError || `At least ${MIN_PASSWORD_LENGTH} characters.`}
+                            </p>
                             <div className="flex gap-2">
                                 <button
+                                    type="button"
                                     className="btnSecondary w-fit"
                                     onClick={() => setMode("select")}
                                 >
                                     Back
                                 </button>
-                                <button className="btnPrimary w-fit mb-2" onClick={handleOnSetup}>
-                                    Confirm
+                                <button type="submit" className="btnPrimary w-fit gap-2" disabled={creating}>
+                                    {creating && <Loader2 className="animate-spin" size={14} />}
+                                    {creating ? "Creating keys..." : "Create password"}
                                 </button>
                             </div>
-                        </>
+                        </form>
                     )}
 
                     {mode === "import" && (
@@ -185,15 +216,19 @@ export default function SetupDialog({ onSetup }) {
                     {mode === "success" && (
                         <div className="flex flex-col gap-4">
                             <p className="textRegular">
-                                Setup complete! Your key has been setup to protect your notes. You can now create and access your notes.
+                                Your keys are on this device. Two steps to get your notes back:
                             </p>
+                            <ol className="list-decimal pl-5 textRegular space-y-1">
+                                <li>Unlock with the password you use on your other device.</li>
+                                <li>Connect Google Drive, where your encrypted notes are synced.</li>
+                            </ol>
                             <button
                                 className="btnPrimary w-fit"
                                 onClick={() => {
                                     window.location.reload();
                                 }}
                             >
-                                Continue
+                                Unlock
                             </button>
                         </div>
                     )}

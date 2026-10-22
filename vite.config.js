@@ -30,7 +30,9 @@ export default defineConfig({
     sitemap(),
     VitePWA({
       workbox: {
-        maximumFileSizeToCacheInBytes: 3000000
+        maximumFileSizeToCacheInBytes: 3000000,
+        // The defaults plus tldraw's bundled fonts and icon sprite, so whiteboards render offline.
+        globPatterns: ['**/*.{js,wasm,css,html,woff2,svg}'],
       },
       registerType: 'autoUpdate', // service worker auto updates
       includeAssets: ['favicon.svg',
@@ -70,4 +72,8 @@ export default defineConfig({
       }
     })
   ],
+  // Pre-bundling turns @tldraw/assets' `?url` imports into undefined; Vite must serve it as is.
+  optimizeDeps: {
+    exclude: ['@tldraw/assets'],
+  },
 })

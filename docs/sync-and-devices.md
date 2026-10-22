@@ -42,10 +42,10 @@ When you permanently delete a page, the deletion is recorded and synced, so the 
 
 On the new device, open Mintype and choose **Returning User → Configure**. Then either:
 
-- **Sign in** to your Mintype account to fetch your encrypted keys, or
+- **Sign in** to your Mintype account. Your encrypted keys are fetched as soon as you are signed in. Or:
 - **Import your key file** (`mintype_encrypted_keys.json`) if you do not use an account.
 
-Then unlock with your usual password, and turn on Google Drive sync in **Settings → Accounts and Sync** to download your notes.
+Then unlock with the password you use on your other devices. If you signed in, Mintype takes you to **Settings → Accounts and Sync**: authorize Google Drive there, and Mintype finds your existing Mintype folder and downloads your notes. If you imported a key file, turn on Google Drive sync there yourself.
 
 Your password never leaves your device. The new device receives your keys only in their encrypted form and unlocks them locally.
 

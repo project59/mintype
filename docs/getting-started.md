@@ -4,7 +4,7 @@ Mintype runs in any modern browser. Open the app, choose **Enter Workspace**, an
 
 ## Create your password
 
-On a new device, choose **New Setup** and pick a password of at least 8 characters.
+On a new device, choose **New Setup**, then enter a password of at least 8 characters twice.
 
 Your password unlocks the key that encrypts all of your notes. Mintype never stores your password and cannot reset it for you, so choose one you will remember. A long passphrase of several words is both easier to remember and harder to guess than a short, complicated password.
 
@@ -12,15 +12,15 @@ Your password unlocks the key that encrypts all of your notes. Mintype never sto
 
 After setup, Mintype shows a **recovery key**: a 64-character code. It is the only other way to unlock your notes if you forget your password.
 
-- Download it and keep it somewhere safe and separate from this device, such as a password manager or a printed copy.
+- Copy or download it and keep it somewhere safe and separate from this device, such as a password manager or a printed copy.
 - Anyone who has your recovery key and a copy of your encrypted data can read your notes, so treat it like a password.
-- You will not be able to see it again in the app.
+- You will not be able to see it again in the app. Tick **I've saved my recovery key** to continue.
 
-## Save your key file
+## Save a key file if you don't use an account
 
-Next, Mintype offers a **key file** (`mintype_encrypted_keys.json`). It holds your encryption key in its encrypted form, locked by your password and by your recovery key. It lets you set up Mintype on another device without signing in to an account. The key file alone cannot unlock your notes; you still need your password or recovery key.
+A **key file** (`mintype_encrypted_keys.json`) holds your encryption key in its encrypted form, locked by your password and by your recovery key. It lets you set up Mintype on another device without signing in to an account. The key file alone cannot unlock your notes; you still need your password or recovery key.
 
-You can download the key file again at any time from **Settings → Security and Recovery → Export Key Bundle**.
+If you sign in to a Mintype account, your devices get your key from there and you don't need a key file. Otherwise, download one with **Download a key file** on the recovery key screen or from **Settings → Security and Recovery → Export Key Bundle**.
 
 ## Unlocking and locking
 

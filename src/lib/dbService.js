@@ -351,13 +351,6 @@ async function getContent(id, masterKey) {
     return decrypted;
 }
 
-// The stored { iv, ciphertext } record, for exports that keep content encrypted.
-async function getEncryptedContent(id) {
-    await initializeDB();
-    const page = await db.get('pagedata', id);
-    return page ? { iv: page.iv, ciphertext: page.ciphertext } : null;
-}
-
 // get all quick notes
 async function getAllQuickNotes() {
     await initializeDB();
@@ -830,7 +823,6 @@ const dbService = {
     addEntry,
     addContentEntry,
     getContent,
-    getEncryptedContent,
     getNotesGeneration,
     getMeta,
     moveEntry,

@@ -34,7 +34,7 @@ Mintype uses 800,000 rounds of PBKDF2 to make each guess slow, but a short or co
 
 Changing your password re-wraps your existing master key with the new password. Your notes are not re-encrypted. Any old copy of your wrapped key, such as an old key file, still opens with your old password, and your recovery key keeps working.
 
-If you think your password or recovery key has been exposed, changing your password is not enough on its own. There is currently no in-app way to replace your master key. To start fresh, export your notes as Markdown, reset Mintype, create a new setup, and import them again. Note that Markdown exports do not keep your page hierarchy.
+If you think your password or recovery key has been exposed, changing your password is not enough on its own. There is currently no in-app way to replace your master key. To start fresh, export all your workspaces from **Settings → Export**, reset Mintype, create a new setup, and import the ZIP again with the Markdown importer.
 
 ## Some information is visible to Google and Mintype's servers
 
@@ -42,7 +42,7 @@ Encryption hides the content of your notes, not everything about them. Google ca
 
 ## Share links are only as private as the link
 
-Anyone with a complete QuickShare link can read that page until the link expires after 24 hours. There is currently no way to revoke a link early, and the expiry is enforced by the server.
+Anyone with a complete QuickShare link can read that page until the link expires after 24 hours or you [revoke it](sharing.md#updating-or-revoking-a-link). The expiry and revocation are enforced by the server. Revoking deletes the encrypted page, but it cannot take back a copy someone already opened or saved.
 
 ## Unencrypted copies you create
 

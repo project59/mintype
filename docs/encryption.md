@@ -94,6 +94,10 @@ QuickShare uses a separate key for every share ([`shareCrypto.js`](../src/compon
 
 Browsers do not send the `#` fragment of a URL to servers, so Mintype's server stores and serves only the ciphertext. The master key is not involved, so a share link reveals nothing about your other pages.
 
+Resharing an edited page encrypts the new version with the same key and a new IV, and overwrites the file, so the existing link keeps working. To reshare or revoke, the device sends the share ID and a manage token that the server issued when the link was created (an HMAC of the share ID under a server secret). The token is useless without the share ID and does not reveal the key.
+
+The device keeps each link it created in localStorage until the link expires ([`sharedLinks.js`](../src/components/quickshare/sharedLinks.js)). The link, its manage token and a SHA-256 hash of the shared content (used to tell whether the page changed) are encrypted with the master key; only the page ID and expiry time are stored in plain text.
+
 ## Sensitive pages
 
 Marking a page as sensitive does not encrypt it differently. It is encrypted with the master key like every other page, and the password prompt is shown by the app before the page is displayed. Sensitive pages are excluded from the search index and from QuickShare.

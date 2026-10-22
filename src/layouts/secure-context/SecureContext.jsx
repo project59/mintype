@@ -7,6 +7,7 @@ import {
   encryptWithKey,
   decryptWithKey,
   exportKey,
+  MIN_PASSWORD_LENGTH,
 } from "./secureUtils";
 import PasswordPrompt from "./PasswordPrompt";
 import SetupDialog from "./SetupDialog";
@@ -82,8 +83,8 @@ export default function SecureProvider({ children }) {
     }
 
     // Normal new setup - validate password first
-    if (!password || password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    if (!password || password.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
       return;
     }
 
@@ -150,8 +151,8 @@ export default function SecureProvider({ children }) {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`New password must be at least ${MIN_PASSWORD_LENGTH} characters`);
       return;
     }
 
@@ -286,7 +287,7 @@ export default function SecureProvider({ children }) {
     return <PasswordPrompt onSubmit={handleLogin} />;
 
   if (showRecoveryDialog) {
-    return <RecoveryKeyDialog onHandleExport={handleExport} recoveryKey={recKey} onClose={() => { toast.success("Setup Complete!"); setShowRecoveryDialog(false) }} showDialog={showRecoveryDialog} />;
+    return <RecoveryKeyDialog recoveryKey={recKey} onDownloadKeyFile={handleExport} onClose={() => { toast.success("Setup Complete!"); setShowRecoveryDialog(false) }} showDialog={showRecoveryDialog} />;
   }
 
   return <SecureContext.Provider value={value}>

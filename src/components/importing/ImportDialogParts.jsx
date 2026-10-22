@@ -4,7 +4,7 @@
 export function ImportFileInput({ file, onFileChange, disabled }) {
     return (
         <label className={`flex items-center gap-2 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
-            <span className="btnSecondary shrink-0">Choose ZIP</span>
+            <span className="btnAction shrink-0">Choose ZIP</span>
             <span className="textRegular truncate">{file ? file.name : 'No file selected'}</span>
             <input
                 type="file"

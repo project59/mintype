@@ -169,7 +169,7 @@ export default function WorkspaceHome() {
                             <div className="pb-4">
                                 <h4 className="font-semibold">Import</h4>
                                 <p className="textRegular">
-                                    Import your notes as MD or JSON files.
+                                    Import a Markdown export, an Obsidian vault or Notion.
                                 </p>
                             </div>
                             <Link to="/settings/import" className="btnChip w-fit">

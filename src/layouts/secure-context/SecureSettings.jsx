@@ -14,11 +14,11 @@ export default function SecureSettings() {
     return (
         <SettingsSkeleton title="Security and Recovery">
             <div className="space-y-8">
-                <p className="textRegular">
+                <p className="textRegular max-w-xl">
                     Mintype encrypts your notes locally on your device to keep them safe. <br /> No one else can access your notes without your password or recovery key.
                     {" "}<Link to="/docs/security-overview" className="underline text-indigo-500">Learn how it works</Link>.
                 </p>
-                <div className="w-full md:max-w-md space-y-2">
+                <div className="w-full md:max-w-xl space-y-2">
                     <h4 className="textTitle">Change Password</h4>
                     <div className="flex gap-2">
                         <input
@@ -47,7 +47,7 @@ export default function SecureSettings() {
                     </button>
                 </div>
 
-                <div className="space-y-2 max-w-md">
+                <div className="space-y-2 max-w-xl">
                     <h4 className="textTitle">Export Key Bundle</h4>
                     <p className="textRegular">This file contains your encrypted master key and recovery key. It can be imported during setup to unlock the app and your notes.</p>
                     <p className="infoBox">
@@ -58,7 +58,7 @@ export default function SecureSettings() {
                     </button>
                 </div>
 
-                <div className="space-y-2 max-w-md">
+                <div className="space-y-2 max-w-xl">
                     <h4 className="textTitle">Reset Mintype</h4>
                     <p className="textRegular">Erase everything Mintype has stored on this device and start again as a new or returning user. Use this to start a new setup, switch to another key, or fix a device where Mintype has stopped working.</p>
                     <div className="infoBox">

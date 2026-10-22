@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import { Edit, X } from 'lucide-react';
+import { extractVideoId, youtubeEmbedUrl } from '../youtubeUtils.js';
 
 const YouTubeView = ({ node, updateAttributes, deleteNode }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(node.attrs.videoId || '');
+  const [invalid, setInvalid] = useState(false);
+  const videoId = extractVideoId(node.attrs.videoId);
 
   const handleSave = () => {
-    updateAttributes({ videoId: value.trim() });
+    const id = extractVideoId(value);
+    setInvalid(!id);
+    if (!id) return;
+    updateAttributes({ videoId: id });
+    setValue(id);
     setIsEditing(false);
   };
 
-  if (isEditing || !node.attrs.videoId) {
+  if (isEditing || !videoId) {
     return (
       <div className="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-lg p-4 bg-gray-50 dark:bg-[#1a1f27] my-2">
         <div className="flex items-center justify-between">
@@ -25,7 +32,11 @@ const YouTubeView = ({ node, updateAttributes, deleteNode }) => {
           <input
             type="text"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setInvalid(false);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder="Paste a YouTube URL or video ID"
             className="baseInput flex-1"
           />
@@ -33,6 +44,7 @@ const YouTubeView = ({ node, updateAttributes, deleteNode }) => {
             Save
           </button>
         </div>
+        {invalid && <p className="mt-2 text-xs text-rose-500">That doesn't look like a YouTube link or video ID.</p>}
       </div>
     );
   }
@@ -41,7 +53,9 @@ const YouTubeView = ({ node, updateAttributes, deleteNode }) => {
     <div className="youtube-embed my-2 relative group">
       <div className="youtube-iframe-wrap" style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
         <iframe
-          src={`https://www.youtube.com/embed/${node.attrs.videoId}`}
+          src={youtubeEmbedUrl(videoId)}
+          title="YouTube video"
+          referrerPolicy="strict-origin-when-cross-origin"
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
           frameBorder="0"
           allowFullScreen
@@ -51,7 +65,7 @@ const YouTubeView = ({ node, updateAttributes, deleteNode }) => {
         <button
           className="bg-black/60 text-white rounded p-1"
           onClick={() => {
-            setValue(node.attrs.videoId);
+            setValue(videoId);
             setIsEditing(true);
           }}
         >

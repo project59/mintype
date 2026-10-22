@@ -94,7 +94,7 @@ export default function PageOptionsPopup({ page, setFavorite, setSensitive, setW
                         )}
 
                         {/* <CloudIndicator savedToCloud={savedToCloud} /> */}
-                        <PageExportOptions pageId={page?.id} markdown={markdown} type={page?.type} />
+                        <PageExportOptions pageId={page?.id} name={page?.name} markdown={markdown} type={page?.type} />
                     </div>
                 </PopoverPanel>
             </Popover>

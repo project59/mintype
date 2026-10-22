@@ -117,7 +117,7 @@ const GoogleDriveLogin = () => {
                             </button>
                         </div>
                         {keyMismatch && accountKeyStatus && !keyConflict && (
-                            <div className="mt-2 flex max-w-md flex-col gap-2">
+                            <div className="mt-2 flex max-w-xl flex-col gap-2">
                                 <StatusChip message={'Google Drive notes use an older key'} type={'warning'} />
                                 <p className="textRegular">
                                     Your account's saved key is the same as this device's, so it cannot read the notes on Google Drive either. They can only be opened with the key backup file downloaded when that key was set up: reset Mintype, choose Returning User and import that file.
@@ -125,7 +125,7 @@ const GoogleDriveLogin = () => {
                             </div>
                         )}
                         {keyConflict && (
-                            <div className="mt-2 flex max-w-md flex-col gap-2">
+                            <div className="mt-2 flex max-w-xl flex-col gap-2">
                                 <StatusChip message={'Your account has a different encryption key'} type={'warning'} />
                                 <p className="textRegular">
                                     Notes synced from your other devices are encrypted with the key saved to your account. This device was set up with a different key, so it cannot read them, and its key was not saved to your account.
@@ -164,7 +164,7 @@ const GoogleDriveLogin = () => {
                 ) : (
                     <div className='mt-4 flex flex-col gap-2'>
                         <StatusChip message={'Not signed in'} type={'warning'} />
-                        <div className="textRegular max-w-md">
+                        <div className="textRegular max-w-xl">
                             Mintype uses web browser storage to save your notes. This means that manual or automatic clearing of browser data will erase your notes!
                             <br /><br />
                             Setup sync to Google Drive to keep them stored safely and accessible on all your devices.

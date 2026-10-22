@@ -31,14 +31,14 @@ export default function ExperimentalSettings() {
 
     return (
         <SettingsSkeleton title="Experimental">
-            <p className="textRegular max-w-md infoBox">
+            <p className="textRegular max-w-xl infoBox">
                     These are experimental features available during the open beta. Use at your own risk.
                 </p>
             <div className="space-y-3 text-gray-400 mb-4">
                 <h2 className="textTitle">
                     Clear the Sync Queue
                 </h2>
-                <p className="textRegular max-w-md">
+                <p className="textRegular max-w-xl">
                     This will clear the sync queue of all pending operations. This will not delete your notes, but it will remove any operations that are currently in the queue from being processed into Google Drive.
                 </p>
 
@@ -70,7 +70,7 @@ export default function ExperimentalSettings() {
                 <h2 className="textTitle">
                     Delete All Local Notes
                 </h2>
-                <p className="textRegular max-w-md">
+                <p className="textRegular max-w-xl">
                     This will delete all notes from Mintype local storage! This will not delete your notes from Google Drive. This action cannot be undone. Any notes that have not been synced to Google Drive or exported will be lost and cannot be recovered.
                 </p>
 

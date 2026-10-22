@@ -10,9 +10,18 @@ QuickShare turns a document or whiteboard into a read-only link that anyone can 
 
 You need to be signed in to a Mintype account to create links. Pages marked **sensitive** cannot be shared; unmark them first if you want to share them.
 
+Your device remembers the link until it expires, so opening **Quick Share** on the same page again shows the same link instead of creating a new one.
+
+## Updating or revoking a link
+
+- **Reshare.** If you edit the page after sharing it, **Quick Share** offers **Reshare**. It uploads the current version to the same link, so people who already have the link see your changes. The link keeps its original expiry time.
+- **Revoke.** **Revoke** deletes the shared page from Mintype's server straight away, so the link stops working. Use it if you shared the wrong page or sent the link to the wrong person. Anyone who already opened the page may still have it on screen or have saved a copy.
+
+Only the device that created a link can reshare or revoke it.
+
 ## What the link shares
 
-- **A snapshot.** The link shows the page as it was when you created the link. Later edits are not included; create a new link to share them.
+- **A snapshot.** The link shows the page as it was when you created or last reshared it. Later edits are not included until you reshare.
 - **The page's name, emoji and content,** including images.
 - **Titles of linked pages.** Links and mentions that point to your other pages are turned into plain text showing those pages' titles. The pages themselves are not shared.
 
@@ -46,4 +55,4 @@ For the technical details, see [Encryption in detail](encryption.md#quickshare).
 4. The key is added to the link after the `#`.
 5. The recipient's browser downloads the encrypted file and decrypts it with the key from the link.
 
-The key never leaves the two devices, except inside the link you choose to send.
+The key never leaves the two devices, except inside the link you choose to send. Your device keeps the link, encrypted with your own key, until it expires, so it can show, reshare or revoke it later.

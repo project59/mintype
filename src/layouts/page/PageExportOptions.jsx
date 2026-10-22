@@ -3,31 +3,23 @@ import { useContext } from 'react';
 import dbService from '../../lib/dbService.js';
 import { ChevronDownIcon } from 'lucide-react';
 import { SecureContext } from '../secure-context/SecureContext.jsx';
+import { safeFileName, WHITEBOARD_EXTENSION } from '../../components/exporting/archiveFormat.js';
+import { downloadBlob } from '../../components/exporting/markdownExport.js';
 
-export default function PageExportOptions({ pageId, markdown, type }) {
+// Exports the page in the form a workspace export stores it: documents as Markdown (the
+// editor's current text, which may be newer than the saved copy), whiteboards as JSON.
+export default function PageExportOptions({ pageId, name, markdown, type }) {
     const { masterKey } = useContext(SecureContext);
+    const isWhiteboard = type === 'whiteboard';
 
-    const exportToJSON = async () => {
-        await dbService.getContent(pageId, masterKey).then((page) => {
-            const json = JSON.stringify(page, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${pageId}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-        })
-    };
-
-    const exportToMarkdown = () => {
-        const blob = new Blob([markdown || ''], { type: 'text/markdown;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${pageId}.md`;
-        link.click();
-        URL.revokeObjectURL(url);
+    const exportPage = async () => {
+        const fileName = safeFileName(name);
+        if (isWhiteboard) {
+            const content = await dbService.getContent(pageId, masterKey);
+            downloadBlob(new Blob([JSON.stringify(content)], { type: 'application/json' }), `${fileName}${WHITEBOARD_EXTENSION}`);
+        } else {
+            downloadBlob(new Blob([markdown || ''], { type: 'text/markdown;charset=utf-8' }), `${fileName}.md`);
+        }
     };
 
     return (
@@ -42,22 +34,12 @@ export default function PageExportOptions({ pageId, markdown, type }) {
                 <DisclosurePanel className="mt-2">
                     <div className='flex justify-between items-center'>
                         <p className='text-xs'>
-                            Export this page as JSON
+                            {isWhiteboard ? 'Export this whiteboard as JSON (.whiteboard.json)' : 'Export this page as Markdown'}
                         </p>
-                        <button className='btnAction' onClick={exportToJSON}>
+                        <button className='btnAction' onClick={exportPage}>
                             Export
                         </button>
                     </div>
-                    {type === 'document' && (
-                        <div className='flex justify-between items-center mt-2'>
-                            <p className='text-xs'>
-                                Export this page as Markdown
-                            </p>
-                            <button className='btnAction' onClick={exportToMarkdown}>
-                                Export
-                            </button>
-                        </div>
-                    )}
                 </DisclosurePanel>
             </Disclosure>
 

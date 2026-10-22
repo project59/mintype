@@ -123,9 +123,6 @@ export default function MyProfile() {
 
                 <div className='flex flex-col md:flex-row gap-4'>
                     <div className='md:w-1/2 flex flex-col bg-slate-300/10 dark:bg-slate-500/10 p-3 rounded-lg'>
-                        <h3 className='textTitle'>Account</h3>
-                        <p className='textRegular text-gray-500 mb-4'>Private information</p>
-
                         <div className='flex flex-col gap-3'>
                             <div className='space-y-1'>
                                 <p className='textLabel'>Email</p>

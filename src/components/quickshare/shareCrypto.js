@@ -19,8 +19,12 @@ const transform = async (bytes, stream) => new Uint8Array(
     await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer(),
 );
 
-export async function encryptSharedPage(payload) {
-    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+// `keyFragment` reuses an existing link's key, so updating a share keeps its link working.
+export async function encryptSharedPage(payload, keyFragment = null) {
+    const key = keyFragment
+        ? await readShareKey(keyFragment, 'encrypt', true)
+        : await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+    if (!key) throw new Error('Invalid share key');
     const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
     const compressed = await transform(new TextEncoder().encode(JSON.stringify(payload)), new CompressionStream('gzip'));
     const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, compressed));
@@ -35,13 +39,13 @@ export async function encryptSharedPage(payload) {
 }
 
 // Returns the key from a location hash such as `#k=...`, or null when it is missing or malformed.
-export async function readShareKey(hash) {
+export async function readShareKey(hash, usage = 'decrypt', extractable = false) {
     const encoded = new URLSearchParams(hash.replace(/^#/, '')).get(KEY_PARAM);
     if (!encoded) return null;
     try {
         const raw = base64ToArrayBuffer(fromBase64Url(encoded));
         if (raw.byteLength !== 32) return null;
-        return await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt']);
+        return await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, extractable, [usage]);
     } catch {
         return null;
     }
@@ -58,4 +62,10 @@ export async function decryptSharedPage(key, buffer) {
     );
     const json = await transform(new Uint8Array(decrypted), new DecompressionStream('gzip'));
     return JSON.parse(new TextDecoder().decode(json));
+}
+
+// Identifies a payload's content, to tell whether a page changed since it was shared.
+export async function hashSharePayload(payload) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+    return arrayBufferToBase64(digest);
 }

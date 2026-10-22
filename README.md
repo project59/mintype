@@ -74,7 +74,7 @@ The [privacy and security docs](docs/security-overview.md) explain exactly how t
 - **Quick Notes** for jotting things down on the go and organising later.
 - Favourites, a trash folder, drag-and-drop reordering, and moving pages between workspaces.
 - Search across documents and whiteboards.
-- Import from Notion, Markdown, or Mintype JSON. Export to Markdown or encrypted JSON backups.
+- Export workspaces as plain Markdown that keeps the page tree, and import them back, along with Obsidian vaults and Notion exports.
 - Light and dark mode.
 
 ## FAQ
@@ -188,6 +188,16 @@ Built with React, Vite, Tailwind CSS, [TipTap](https://tiptap.dev), and [tldraw]
 ### Contributing
 
 Bug reports, feature requests, and small fixes are welcome through [GitHub Issues](https://github.com/project59/mintype/issues). I'm not taking on dedicated contributors right now.
+
+## License
+
+Mintype is licensed under the [GNU Affero General Public License v3.0](LICENSE). Whiteboards use the [tldraw SDK](https://tldraw.dev), which has its own license.
+
+### Additional permission under GNU AGPL version 3 section 7
+
+If you modify this Program, or any covered work, by linking or combining it with the tldraw SDK (the `tldraw` and `@tldraw/*` packages, or a modified version of them), containing parts covered by the terms of the [tldraw license](https://github.com/tldraw/tldraw/blob/main/LICENSE.md), the licensors of this Program grant you additional permission to convey the resulting work. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the tldraw SDK used as well as that of the covered work.
+
+This permission does not change the tldraw license itself: anyone running Mintype with tldraw must still meet its terms, including a license key for production deployments.
 
 ## Support Mintype
 

@@ -1,10 +1,12 @@
 // components/PasswordPrompt.jsx
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import { useState } from "react";
+import { isRestorePending } from "../../drivesync/restorePending";
 
 export default function PasswordPrompt({ onSubmit }) {
     const [password, setPassword] = useState("");
     const [useRecovery, setUseRecovery] = useState(false);
+    const [restoring] = useState(isRestorePending);
 
     // on pressing Enter key, submit the form
     const handleKeyDown = (e) => {
@@ -21,6 +23,13 @@ export default function PasswordPrompt({ onSubmit }) {
                     <h2 className="textTitle">
                         {useRecovery ? "Enter Recovery Key" : "Enter Password"}
                     </h2>
+                    {restoring && (
+                        <p className="textRegular">
+                            {useRecovery
+                                ? "Use the recovery key you saved when you first set up Mintype."
+                                : "Use the password you unlock Mintype with on your other device."}
+                        </p>
+                    )}
                     <input
                         type="password"
                         className="baseInput"

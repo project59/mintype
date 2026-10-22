@@ -3,6 +3,7 @@ import { Tldraw } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { useTheme } from '../../utils/theme.js';
 import { ReadOnlyMarkdownShapeUtil } from './markdownShape.jsx';
+import { TLDRAW_ASSET_URLS } from './tldrawAssets.js';
 import { TLDRAW_LICENSE_KEY } from './tldrawLicense.js';
 
 const shapeUtils = [ReadOnlyMarkdownShapeUtil];
@@ -27,7 +28,7 @@ export default function ReadOnlyWhiteboard({ snapshot, className = 'relative min
     // tldraw's container sets no z-index, so its panels would otherwise stack above app UI.
     return (
         <div className={`isolate ${className}`}>
-            <Tldraw licenseKey={TLDRAW_LICENSE_KEY} snapshot={snapshot} shapeUtils={shapeUtils} onMount={handleMount} />
+            <Tldraw licenseKey={TLDRAW_LICENSE_KEY} assetUrls={TLDRAW_ASSET_URLS} snapshot={snapshot} shapeUtils={shapeUtils} onMount={handleMount} />
         </div>
     );
 }

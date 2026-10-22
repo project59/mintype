@@ -2,28 +2,13 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import YouTubeView from '../components/YouTubeView.jsx';
 import { leafDirectiveTokenizer, renderLeafDirective } from '../markdown/directives.js';
-
-const extractVideoId = (value) => {
-  if (!value) return '';
-  const trimmed = value.trim();
-  if (/^[\w-]{11}$/.test(trimmed)) return trimmed;
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
-    /youtube\.com\/shorts\/([\w-]{11})/,
-  ];
-  for (const pattern of patterns) {
-    const match = trimmed.match(pattern);
-    if (match) return match[1];
-  }
-  return '';
-};
+import { extractVideoId, youtubeEmbedUrl } from '../youtubeUtils.js';
 
 export const YouTubeNode = Node.create({
   name: 'youtube',
   group: 'block',
   atom: true,
   selectable: true,
-  draggable: true,
 
   addAttributes() {
     return {
@@ -40,7 +25,7 @@ export const YouTubeNode = Node.create({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const videoId = node.attrs.videoId;
+    const videoId = extractVideoId(node.attrs.videoId);
     if (!videoId) {
       return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'youtube', class: 'youtube-embed' }), 'YouTube Video'];
     }
@@ -50,7 +35,16 @@ export const YouTubeNode = Node.create({
       [
         'div',
         { class: 'youtube-iframe-wrap' },
-        ['iframe', { src: `https://www.youtube.com/embed/${videoId}`, frameborder: '0', allowfullscreen: 'true' }],
+        [
+          'iframe',
+          {
+            src: youtubeEmbedUrl(videoId),
+            title: 'YouTube video',
+            frameborder: '0',
+            referrerpolicy: 'strict-origin-when-cross-origin',
+            allowfullscreen: 'true',
+          },
+        ],
       ],
     ];
   },

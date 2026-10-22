@@ -1,27 +1,41 @@
 import { Button, Dialog, DialogBackdrop, DialogPanel, DialogTitle, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { useContext, useEffect, useState } from 'react'
-import JSZip from 'jszip';
 import { nanoid } from 'nanoid';
+import { ChevronDownIcon } from 'lucide-react';
 import dbService from '../../lib/dbService';
 import { SecureContext } from '../../layouts/secure-context/SecureContext';
-import { ChevronDownIcon } from 'lucide-react';
-import { createImportedMeta, dirOf, embedZipImages, emptyImportResult, isZipFile, isZipMetadataPath, parseWhiteboardFile, rewritePageLinks } from './importUtils';
-import { WHITEBOARD_EXTENSION } from '../exporting/markdownExport';
+import { newPageSchema } from '../../utils/constants';
+import { createPageResolver, planMarkdownImport, readPageContent } from './markdownImport';
+import { emptyImportResult, isZipFile, loadZipFiles, loadZipImage, resolveZipPath } from './importUtils';
 import { ImportActions, ImportError, ImportFileInput } from './ImportDialogParts';
 
-const PAGE_FILE = new RegExp(`(\\.md|${WHITEBOARD_EXTENSION.replace(/\./g, '\\.')})$`, 'i');
+const NEW_WORKSPACE = 'new';
+const IMAGE_URL = /^(https?:|data:image\/)/i;
+
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 export default function MarkdownImporter({ onImportComplete }) {
-    let [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
     const [file, setFile] = useState(null);
+    const [source, setSource] = useState(null);
+    const [isReading, setIsReading] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [error, setError] = useState(null);
+    const [target, setTarget] = useState(NEW_WORKSPACE);
+    const [allRoots, setAllRoots] = useState([]);
     const { masterKey } = useContext(SecureContext);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        dbService.getAllRootMeta().then((roots) => setAllRoots(roots.filter((root) => !root.deleted)));
+    }, [isOpen])
 
     function open() {
         setFile(null);
+        setSource(null);
         setError(null);
+        setTarget(NEW_WORKSPACE);
         setIsOpen(true)
     }
 
@@ -29,147 +43,167 @@ export default function MarkdownImporter({ onImportComplete }) {
         if (!isImporting) setIsOpen(false)
     }
 
-    const handleFileChange = (selectedFile) => {
-        setFile(isZipFile(selectedFile) ? selectedFile : null);
-        setError(selectedFile && !isZipFile(selectedFile) ? 'Please select a ZIP file.' : null);
+    const handleFileChange = async (selectedFile) => {
+        setFile(null);
+        setSource(null);
+        setError(null);
+        if (!selectedFile) return;
+        if (!isZipFile(selectedFile)) return setError('Please select a ZIP file.');
+
+        setFile(selectedFile);
+        setIsReading(true);
+        try {
+            const files = await loadZipFiles(selectedFile);
+            setSource({ files, plan: await planMarkdownImport(files, selectedFile.name) });
+        } catch (readError) {
+            console.error('Could not read ZIP:', readError);
+            setError(readError.message);
+        } finally {
+            setIsReading(false);
+        }
     };
 
-    // Obsidian and other tools put YAML front matter above the content.
-    const stripFrontMatter = (markdown) => markdown.replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/, '');
+    // A background from a Mintype export is a URL or a file in the workspace folder.
+    const readBackground = async (files, workspace) => {
+        const { background, root } = workspace;
+        if (!background || IMAGE_URL.test(background)) return background;
+        return loadZipImage(files, resolveZipPath(root, background), { compress: false });
+    };
 
-    // Every Markdown file, and every whiteboard exported as JSON, becomes a page at the top of the
-    // chosen workspace. IDs are assigned up front so links between the imported files can point at
-    // their new pages.
+    // Pages get their IDs up front so links between them, even across workspaces, can point at
+    // their new pages. A page whose parent failed to import goes to the top of its workspace.
     const handleImport = async () => {
         setIsImporting(true);
         setError(null);
-        setProgress({ current: 0, total: 0 });
 
         try {
-            const zip = await JSZip.loadAsync(file);
-            const paths = Object.keys(zip.files)
-                .filter((path) => PAGE_FILE.test(path) && !zip.files[path].dir && !isZipMetadataPath(path))
-                .sort((a, b) => a.localeCompare(b));
-            if (paths.length === 0) {
-                throw new Error('No Markdown or whiteboard files found in the zip archive');
-            }
-
-            const pageIds = new Map(paths.map((path) => [path, nanoid()]));
+            const { files, plan } = source;
+            const resolvePage = createPageResolver(plan);
+            const ids = new Map(plan.workspaces.flatMap((workspace) => workspace.pages.map((page) => [page.key, nanoid()])));
+            const imported = new Set();
             const expectedNotesGeneration = dbService.getNotesGeneration();
-            const results = { ...emptyImportResult(), total: paths.length };
-            setProgress({ current: 0, total: paths.length });
+            const results = { ...emptyImportResult(), total: plan.pageCount };
+            setProgress({ current: 0, total: plan.pageCount });
 
-            for (const [index, path] of paths.entries()) {
-                const name = path.split('/').pop().replace(PAGE_FILE, '');
-                const type = path.toLowerCase().endsWith(WHITEBOARD_EXTENSION) ? 'whiteboard' : 'document';
-                try {
-                    const baseDir = dirOf(path);
-                    const text = await zip.file(path).async('string');
-                    const linkPages = (markdown) => rewritePageLinks(markdown, baseDir, (target) => pageIds.get(target));
-                    let content;
-                    if (type === 'whiteboard') {
-                        content = parseWhiteboardFile(text, linkPages);
-                    } else {
-                        const markdown = await embedZipImages(stripFrontMatter(text), zip, baseDir);
-                        content = { type, markdown: linkPages(markdown) };
+            for (const workspace of plan.workspaces) {
+                let rootId = target;
+                if (target === NEW_WORKSPACE) {
+                    rootId = await dbService.addRootEntry({
+                        newContent: { name: workspace.name, ...(workspace.emoji && { emoji: workspace.emoji }) },
+                        password: masterKey,
+                    });
+                    if (workspace.fromMintype) {
+                        const background = await readBackground(files, workspace).catch(() => null);
+                        await dbService.updateContentField({ id: rootId, fieldName: 'background', newValue: background, masterKey });
                     }
-
-                    const meta = createImportedMeta({
-                        id: pageIds.get(path),
-                        name,
-                        parentId: newRootId,
-                        rootId: newRootId,
-                        type,
-                    });
-                    const didImport = await dbService.importPage({
-                        meta,
-                        content,
-                        masterKey,
-                        expectedNotesGeneration,
-                    });
-                    if (!didImport) throw new Error('Notes were reset during the import.');
-                    results.success++;
-                } catch (pageError) {
-                    console.error(`Error importing ${path}:`, pageError);
-                    results.failures.push({ name, error: pageError.message });
                 }
-                setProgress({ current: index + 1, total: paths.length });
+
+                for (const page of workspace.pages) {
+                    try {
+                        const content = await readPageContent(page, workspace, {
+                            files,
+                            resolvePage,
+                            idForPage: (linked) => ids.get(linked.key),
+                            readImage: (path) => loadZipImage(files, path, { compress: !workspace.fromMintype }),
+                        });
+                        let parentId = imported.has(page.parentKey) ? ids.get(page.parentKey) : rootId;
+                        if (page.quickNote) parentId = 'quickNote';
+                        const meta = {
+                            ...newPageSchema(page.type, null, page.name),
+                            ...page.meta,
+                            id: ids.get(page.key),
+                            parentId: page.trashed ? rootId : parentId,
+                            rootId,
+                            deleted: page.trashed,
+                        };
+                        const didImport = await dbService.importPage({ meta, content, masterKey, expectedNotesGeneration });
+                        if (!didImport) throw new Error('Notes were reset during the import.');
+                        imported.add(page.key);
+                        results.success++;
+                    } catch (pageError) {
+                        console.error(`Error importing ${page.path || page.name}:`, pageError);
+                        results.failures.push({ name: page.name, error: pageError.message });
+                    }
+                    setProgress((current) => ({ ...current, current: current.current + 1 }));
+                }
             }
 
             results.failed = results.failures.length;
             dbService.notifyUpdate();
             onImportComplete?.(results);
             if (results.success > 0) setIsOpen(false);
-        } catch (error) {
-            console.error('Import error:', error);
-            setError(error.message);
+        } catch (importError) {
+            console.error('Import error:', importError);
+            setError(importError.message);
         } finally {
             setIsImporting(false);
         }
     };
 
-    const [newRootId, setNewRootId] = useState(null);
-    const [allRoots, setAllRoots] = useState([]);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        dbService.getAllRootMeta().then((roots) => setAllRoots(roots.filter((root) => !root.deleted)));
-    }, [isOpen])
+    const plan = source?.plan;
+    const targetName = target === NEW_WORKSPACE
+        ? (plan?.workspaces.length > 1 ? 'New workspaces' : 'New workspace')
+        : allRoots.find((root) => root.id === target)?.name;
 
     return (
         <>
-            <Button
-                onClick={open}
-                className="btnPrimary"
-            >
+            <Button onClick={open} className="btnPrimary">
                 Markdown
             </Button>
 
             <Dialog open={isOpen} className="relative z-20 focus:outline-none" onClose={close}>
                 <DialogBackdrop transition className="dialogBackdrop" />
                 <div className="dialogWrapper">
-                    <DialogPanel
-                        transition
-                        className="dialogPanel"
-                    >
+                    <DialogPanel transition className="dialogPanel">
                         <DialogTitle className="textTitle">Markdown Import</DialogTitle>
                         <p className='textRegular'>
-                            Put your Markdown (.md) and whiteboard (.whiteboard.json) files in a ZIP folder, then upload it.
+                            Upload a ZIP of Markdown (.md) files: a Mintype export, an Obsidian vault, or a Notion export in 'Markdown & CSV' format. Folders become sub-pages and images are kept.
                         </p>
 
-                        <Menu>
-                            <MenuButton className="btnSecondary" disabled={isImporting}>
-                                {allRoots.find((root) => root.id === newRootId)?.name || 'Select workspace'}
-                                <ChevronDownIcon className="size-4 fill-white/60" />
-                            </MenuButton>
+                        <ImportFileInput file={file} onFileChange={handleFileChange} disabled={isImporting || isReading} />
+                        {isReading && <p className="textRegular">Reading ZIP...</p>}
+                        {plan && (
+                            <p className="infoBox">
+                                Found {plural(plan.pageCount, 'page')}
+                                {plan.workspaces.length > 1 && ` in ${plural(plan.workspaces.length, 'workspace')}`}
+                                {plan.workspaces.some((workspace) => workspace.fromMintype) && ', exported from Mintype'}.
+                            </p>
+                        )}
 
-                            <MenuItems
-                                transition
-                                anchor="bottom start"
-                                className="dropdownPanel mt-1"
-                            >
-                                {allRoots.map((root) => (
-                                    <MenuItem key={root.id}>
-                                        <button
-                                            className="dropdownItem text-left"
-                                            onClick={() => setNewRootId(root.id)}
-                                        >
-                                            {root.name}
-                                        </button>
-                                    </MenuItem>
-                                ))}
-                            </MenuItems>
-                        </Menu>
-                        <ImportFileInput file={file} onFileChange={handleFileChange} disabled={isImporting} />
+                        {plan && (
+                            <div className="space-y-1">
+                                <p className="textLabel">Import into</p>
+                                <Menu>
+                                    <MenuButton className="btnSecondary" disabled={isImporting}>
+                                        {targetName}
+                                        <ChevronDownIcon className="size-4 fill-white/60" />
+                                    </MenuButton>
+                                    <MenuItems transition anchor="bottom start" className="dropdownPanel mt-1">
+                                        <MenuItem>
+                                            <button className="dropdownItem text-left" onClick={() => setTarget(NEW_WORKSPACE)}>
+                                                {plan.workspaces.length > 1 ? 'New workspaces' : 'New workspace'}
+                                            </button>
+                                        </MenuItem>
+                                        {allRoots.map((root) => (
+                                            <MenuItem key={root.id}>
+                                                <button className="dropdownItem text-left" onClick={() => setTarget(root.id)}>
+                                                    {root.name}
+                                                </button>
+                                            </MenuItem>
+                                        ))}
+                                    </MenuItems>
+                                </Menu>
+                            </div>
+                        )}
 
                         {isImporting && progress.total > 0 && (
-                            <p className="textRegular">Importing {progress.current} of {progress.total} files...</p>
+                            <p className="textRegular">Importing {progress.current} of {progress.total} pages...</p>
                         )}
                         <ImportError message={error} />
                         <ImportActions
                             onCancel={close}
                             onConfirm={handleImport}
-                            canConfirm={!!file && !!newRootId}
+                            canConfirm={!!plan}
                             isBusy={isImporting}
                         />
                     </DialogPanel>

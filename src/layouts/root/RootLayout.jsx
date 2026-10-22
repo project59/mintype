@@ -6,6 +6,7 @@ import { SidebarProvider } from './SidebarContext.jsx';
 import { GoogleDriveProvider } from '../../drivesync/GoogleDriveContext.jsx';
 import { SyncProvider } from '../../drivesync/SyncProvider.jsx';
 import { OnlineStatusProvider } from './OnlineStatusContext.jsx';
+import RestoreDriveRedirect from '../../drivesync/RestoreDriveRedirect.jsx';
 
 export default function RootLayout() {
     return (
@@ -17,6 +18,7 @@ export default function RootLayout() {
                             <GoogleDriveProvider>
                                 <SyncProvider autoSyncEnabled={true} syncInterval={30000}>
                                     <SidebarProvider>
+                                        <RestoreDriveRedirect />
                                         <Outlet />
                                     </SidebarProvider>
                                 </SyncProvider>

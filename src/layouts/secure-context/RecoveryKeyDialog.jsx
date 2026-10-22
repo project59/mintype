@@ -1,68 +1,70 @@
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
-import { useState } from "react";
+import { CheckCheck, Copy, Download } from "lucide-react";
+import { useRef, useState } from "react";
 
-export default function RecoveryKeyDialog({ recoveryKey, onClose, showDialog, onHandleExport }) {
-    const [downloaded, setDownloaded] = useState(false)
-    const [mode, setMode] = useState('recovery')
+// Shown once, right after setup. It can't be dismissed: the key is never shown again, so the user
+// confirms they saved it before continuing.
+export default function RecoveryKeyDialog({ recoveryKey, onClose, showDialog, onDownloadKeyFile }) {
+    const [saved, setSaved] = useState(false)
+    const [copied, setCopied] = useState(false)
+    const [copyFailed, setCopyFailed] = useState(false)
+    const keyRef = useRef(null)
+
     const downloadRecoveryKey = () => {
         const element = document.createElement("a");
         const file = new Blob([recoveryKey], { type: "text/plain" });
         element.href = URL.createObjectURL(file);
-        element.download = "recovery_key.txt";
+        element.download = "mintype_recovery_key.txt";
         document.body.appendChild(element); // Required for this to work in FireFox
         element.click();
+        element.remove();
+    };
 
-        setDownloaded(true)
+    const copyRecoveryKey = async () => {
+        try {
+            await navigator.clipboard.writeText(recoveryKey);
+            setCopyFailed(false);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Select the key so it can be copied by hand.
+            window.getSelection()?.selectAllChildren(keyRef.current);
+            setCopyFailed(true);
+        }
     };
 
     return (
-        <Dialog open={showDialog} onClose={onClose}>
+        <Dialog open={showDialog} onClose={() => { }}>
             <DialogBackdrop transition className="dialogBackdrop" />
             <div className="dialogWrapper">
                 <DialogPanel transition className="dialogPanel">
-                    <h2 className="textTitle">{mode === 'recovery' ? '🔑 Your Recovery Key' : '🔑 Key File'}</h2>
-                    {mode === 'recovery' && (
-                        <>
-                            <p className="textRegular mb-4">
-                                Please save this recovery key in a safe place. You can use it to recover your encrypted notes if you forget your password.
-                            </p>
-                            <p className="textRegular mb-4">
-                                You will not be able to view this key again!
-                            </p>
-                            <div className="p-4 bg-slate-400/20 text-black dark:text-white rounded-lg break-all">
-                                <code>{recoveryKey}</code>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className="btnSecondary w-full" onClick={downloadRecoveryKey}>
-                                    Download
-                                </button>
-                                <button className="btnPrimary w-full" disabled={!downloaded} onClick={() => setMode('bundle')}>
-                                    Continue
-                                </button>
-                            </div>
-                        </>
+                    <h2 className="textTitle">🔑 Save your recovery key</h2>
+                    <p className="textRegular">
+                        If you forget your password, this key is the only way to unlock your notes. Keep it somewhere safe, it won't be shown again.
+                    </p>
+                    <div className="p-4 bg-slate-400/20 text-black dark:text-white rounded-lg break-all select-all">
+                        <code ref={keyRef}>{recoveryKey}</code>
+                    </div>
+                    {copyFailed && (
+                        <p className="text-xs text-red-500">Couldn't copy automatically. The key is selected, so copy it yourself, or download it.</p>
                     )}
-
-                    {mode === 'bundle' && (
-                        <>
-                            <p className="textRegular mb-4">
-                                This key file can be imported during a new setup to access your encrypted data.
-                            </p>
-                            <img className="dark:hidden" src="/svgs/keyfile.svg" alt="keyfile" />
-                            <img className="hidden dark:block" src="/svgs/keyfile-dark.svg" alt="keyfile" />
-                            <div className="flex gap-2">
-                                <button className="btnSecondary w-full" onClick={onHandleExport}>
-                                    Download Key File
-                                </button>
-                                <button className="btnPrimary w-full" disabled={!downloaded} onClick={onClose}>
-                                    Continue
-                                </button>
-                            </div>
-                        </>
-                    )}
+                    <div className="flex gap-2">
+                        <button className="btnSecondary w-full gap-2" onClick={copyRecoveryKey}>
+                            {copied ? <><CheckCheck size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
+                        </button>
+                        <button className="btnSecondary w-full gap-2" onClick={downloadRecoveryKey}>
+                            <Download size={14} /> Download
+                        </button>
+                    </div>
+                    <label className="flex items-center gap-2 textRegular cursor-pointer">
+                        <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} />
+                        I've saved my recovery key somewhere safe
+                    </label>
+                    <button className="btnPrimary w-full" disabled={!saved} onClick={onClose}>
+                        Continue
+                    </button>
                 </DialogPanel>
             </div>
         </Dialog>
     );
 }
-

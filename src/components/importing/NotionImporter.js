@@ -1,9 +1,9 @@
-import JSZip from 'jszip';
 import { nanoid } from 'nanoid';
 import TurndownService from 'turndown';
 import { gfm } from 'turndown-plugin-gfm';
 import dbService from '../../lib/dbService';
-import { createImportedMeta, dirOf, embedZipImages, emptyImportResult, isZipMetadataPath, rewritePageLinks } from './importUtils';
+import { dirOf } from '../exporting/archiveFormat';
+import { convertMarkdownReferences, createImportedMeta, emptyImportResult, loadZipFiles, loadZipImage, resolveZipFile, resolveZipPath } from './importUtils';
 
 const NOTION_ID_SUFFIX = /\s+[a-f0-9]{32}$/;
 
@@ -63,14 +63,8 @@ export function buildPageHierarchy(pages) {
 
 // Reads the export's page tree for the preview; page content is converted only on import.
 export async function analyzeZipStructure(zipFile) {
-    const zip = await JSZip.loadAsync(zipFile);
-    const paths = Object.keys(zip.files).filter((path) => !zip.files[path].dir && !isZipMetadataPath(path));
-
-    if (paths.some((path) => /\.zip$/i.test(path) && !path.includes('/'))) {
-        throw new Error('This ZIP contains another ZIP file. Please extract it and upload the inner ZIP instead.');
-    }
-
-    const pages = paths
+    const files = await loadZipFiles(zipFile);
+    const pages = files.paths
         .filter((path) => /\.html$/i.test(path))
         .map((path) => ({ id: nanoid(), path, name: extractPageName(path) }));
     if (pages.length === 0) {
@@ -89,7 +83,7 @@ export async function analyzeZipStructure(zipFile) {
     }
 
     const { rootPages, pageMap } = buildPageHierarchy(pages);
-    return { zip, pages, rootPages, pageMap, totalPages: pages.length };
+    return { files, pages, rootPages, pageMap, totalPages: pages.length };
 }
 
 // Creates a workspace for the import and adds the selected pages to it. Links between imported
@@ -111,11 +105,16 @@ export async function importSelectedPages(fileStructure, selectedPageIds, master
     const turndownService = initTurndown();
     for (const [index, page] of pages.entries()) {
         try {
-            const zipFile = fileStructure.zip.file(page.path);
+            const { files } = fileStructure;
             const baseDir = dirOf(page.path);
-            let markdown = turndownService.turndown(extractBodyHtml(await zipFile.async('text')));
-            markdown = await embedZipImages(markdown, fileStructure.zip, baseDir);
-            markdown = rewritePageLinks(markdown, baseDir, (target) => pageIdByPath.get(target));
+            const html = await files.get(page.path).async('text');
+            const markdown = await convertMarkdownReferences(turndownService.turndown(extractBodyHtml(html)), {
+                resolvePage: (href) => {
+                    const id = pageIdByPath.get(resolveZipPath(baseDir, href));
+                    return id ? { id } : null;
+                },
+                loadImage: (src) => loadZipImage(files, resolveZipFile(files, baseDir, src)),
+            });
 
             const meta = createImportedMeta({
                 id: page.id,

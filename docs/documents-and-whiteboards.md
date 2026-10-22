@@ -55,4 +55,4 @@ The search button at the top right searches page titles, document text, and text
 ## Other tools
 
 - **Pomodoro timer:** the timer button at the top of a page starts a focus timer.
-- **Page export:** a page's options menu can export it as Markdown or JSON. See [Import, export and backups](import-export.md).
+- **Page export:** a page's options menu can export a document as Markdown or a whiteboard as a `.whiteboard.json` file. See [Import, export and backups](import-export.md).

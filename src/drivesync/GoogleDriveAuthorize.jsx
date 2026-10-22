@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useGoogleDrive } from './GoogleDriveContext.jsx';
 import StatusChip from '../components/common/StatusChip.jsx'
 import { useOnlineStatus } from '../layouts/root/OnlineStatusContext.jsx';
 import ProgressBar from './ProgressBar.jsx';
 import { useSync } from './SyncProvider.jsx';
+import { isRestorePending, setRestorePending } from './restorePending.js';
 
 const GoogleDriveAuthorize = () => {
     const {
@@ -24,6 +25,8 @@ const GoogleDriveAuthorize = () => {
     const isOnline = useOnlineStatus();
 
     const [configuring, setConfiguring] = useState(false);
+    const [restoring, setRestoring] = useState(isRestorePending);
+    const autoConfiguredRef = useRef(false);
 
     const handleConfigure = async () => {
         setConfiguring(true);
@@ -33,6 +36,19 @@ const GoogleDriveAuthorize = () => {
             setConfiguring(false);
         }
     };
+
+    // A returning user's Drive already has a Mintype folder, so finding it needs no extra click.
+    useEffect(() => {
+        if (!restoring || !driveAuthorized || driveConfigured || autoConfiguredRef.current) return;
+        autoConfiguredRef.current = true;
+        handleConfigure();
+    }, [restoring, driveAuthorized, driveConfigured]);
+
+    useEffect(() => {
+        if (!restoring || !driveConfigured) return;
+        setRestorePending(false);
+        setRestoring(false);
+    }, [restoring, driveConfigured]);
 
     if (!isOnline) {
         return (
@@ -53,6 +69,21 @@ const GoogleDriveAuthorize = () => {
                     {/* Google Drive Sync Section */}
                     <section className="flex flex-col gap-3">
                         <h2 className="textTitle">Google Drive Sync</h2>
+
+                        {restoring && !driveConfigured && (
+                            <div className="max-w-md rounded-lg border border-emerald-400/40 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                <p>Connect Google Drive to bring over the notes from your other devices. They're stored encrypted in your Drive and download automatically once it's connected.</p>
+                                <button
+                                    className="mt-2 text-xs underline"
+                                    onClick={() => {
+                                        setRestorePending(false);
+                                        setRestoring(false);
+                                    }}
+                                >
+                                    Not now
+                                </button>
+                            </div>
+                        )}
 
                         {/* Loading Google API */}
                         {!gapiInitialized && (

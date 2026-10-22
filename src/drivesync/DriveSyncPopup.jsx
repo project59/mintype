@@ -55,12 +55,10 @@ export default function DriveSyncPopup() {
     return (
         <div>
             <Button
-                onClick={() => setIsOpen(true)} className={`btnBase rounded-full h-7 ${pullStatus === 'pulling' ? 'w-16' : 'w-8'}
-                    ${pullStatus === 'pulling' ? '!bg-emerald-500 hover:!bg-emerald-400' : 'bg-indigo-500 hover:bg-indigo-400'} 
-                ${syncStatus === 'syncing' ? 'bg-blue-500 hover:bg-blue-400' :
-                        syncStatus === 'error' ? 'bg-red-500 hover:bg-red-400' : 'bg-indigo-500 hover:bg-indigo-400'}  text-white`}>
+                onClick={() => setIsOpen(true)} className={`btnBase rounded-full h-7 w-8 bg-indigo-500 hover:bg-indigo-400
+                ${syncStatus === 'error' ? 'bg-red-500 hover:bg-red-400' : 'bg-indigo-500 hover:bg-indigo-400'}  text-white`}>
                 <div className={`rounded-full h-5 w-5 flex items-center justify-center text-[10px] font-bold ${syncStatus === 'syncing' ? 'animate-spin' : ''}`}>
-                    {syncStatus === 'syncing' ? (<Loader size={12} className="animate-spin" />) : syncStatus === 'success' ? (<Check size={12} />) : syncStatus === 'error' ? (<X size={12} />) : pullStatus === 'pulling' ? (<div className="flex gap-1 items-center"> <ArrowDown size={12} /> Syncing </div>) : (<Cloud size={14} />)}
+                    {syncStatus === 'syncing' ? (<Loader size={12} className="animate-spin" />) : syncStatus === 'success' ? (<Check size={12} />) : syncStatus === 'error' ? (<X size={12} />) : (<Cloud size={14} />)}
                 </div>
             </Button>
             <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-20 focus:outline-none">

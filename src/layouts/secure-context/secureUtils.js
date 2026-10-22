@@ -3,6 +3,8 @@
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
+export const MIN_PASSWORD_LENGTH = 8;
+
 export async function deriveKEK(password, salt) {
   const keyMaterial = await crypto.subtle.importKey(
     "raw",

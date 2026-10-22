@@ -31,7 +31,7 @@ Your password and your recovery key are never stored.
 
 ### Settings in localStorage
 
-The colour theme, which sidebar folders are collapsed, the Pomodoro timer state, the IDs of your Mintype folder and metadata file in Google Drive, and the time of the last sync. If you are signed in, your browser also stores your account session (an access token for Mintype's servers and your email address).
+The colour theme, which sidebar folders are collapsed, the Pomodoro timer state, the IDs of your Mintype folder and metadata file in Google Drive, and the time of the last sync. Whether this device still has to connect Google Drive after restoring your key from your account. QuickShare links you created are kept until they expire, encrypted with your master key; only the page ID and expiry time are readable. If you are signed in, your browser also stores your account session (an access token for Mintype's servers and your email address).
 
 ### The search index
 
@@ -59,7 +59,6 @@ Google cannot see your titles or the content of your pages.
 
 These are outside Mintype's protection once they are on your device:
 
-- **Recovery key** (`recovery_key.txt`): unencrypted. With any copy of your encrypted key, it unlocks your notes.
+- **Recovery key** (`mintype_recovery_key.txt`, if you download it): unencrypted. With any copy of your encrypted key, it unlocks your notes.
 - **Key file** (`mintype_encrypted_keys.json`): your encrypted key bundle. Useless without your password or recovery key, but it lets someone try to guess your password offline.
-- **Markdown exports and single-page exports**: unencrypted copies of your notes.
-- **Mintype JSON exports**: encrypted, like your synced notes.
+- **Workspace exports and single-page exports**: unencrypted copies of your notes.
